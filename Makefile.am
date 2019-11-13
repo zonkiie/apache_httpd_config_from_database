@@ -1,3 +1,3 @@
 AUTOMAKE_OPTIONS = foreign
 bin_PROGRAMS = ap_config
-ap_config_SOURCES = main.c
+ap_config_SOURCES = ap_config.c
