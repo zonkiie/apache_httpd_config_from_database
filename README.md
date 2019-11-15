@@ -7,3 +7,5 @@ Get apache http server config parts from database. These parts are either given 
 ## Required Libraries
  * unixodbc
  * unixodbc-dev
+ * libfuse
+ * libfuse-dev
