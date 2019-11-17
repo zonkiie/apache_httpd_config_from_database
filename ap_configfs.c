@@ -5,12 +5,7 @@
 #define FUSE_USE_VERSION 26
 
 #include <fuse.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <time.h>
-#include <errno.h>
+#include <includes.h>
 
 static int null_getattr(const char *path, struct stat *stbuf,
 			struct fuse_file_info *fi)
@@ -92,5 +87,6 @@ int main(int argc, char *argv[])
 // 		return 1;
 // 	}
 // 
+	get_odbc_datasources();
 	return fuse_main(argc, argv, &null_oper, NULL);
 }
