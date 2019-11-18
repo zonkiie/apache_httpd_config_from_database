@@ -88,5 +88,6 @@ int main(int argc, char *argv[])
 // 	}
 // 
 	get_odbc_datasources();
+	
 	return fuse_main(argc, argv, &null_oper, NULL);
 }

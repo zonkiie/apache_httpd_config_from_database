@@ -35,8 +35,13 @@ void get_odbc_datasources()
 	SQLFreeHandle(SQL_HANDLE_ENV, env);
 }
 
+void config_odbc()
+{
+	// use SQLConfigDataSource
+}
+
 // source from: http://www.unixodbc.org/doc/ProgrammerManual/Tutorial/resul.html
-void exec_obdc_query()
+void exec_obdc_query(char * query)
 {
 	SQLHSTMT V_OD_hstmt;   // Handle for a statement
 	SQLINTEGER V_OD_err,V_OD_id,V_OD_rowanz;
@@ -83,7 +88,7 @@ void exec_obdc_query()
 		SQLFreeHandle(SQL_HANDLE_ENV, V_OD_Env);
 		exit(0);
 	}
-    V_OD_erg=SQLExecDirect(V_OD_hstmt,"SELECT dtname,iduser FROM tkeyuser order by iduser",SQL_NTS);   
+    V_OD_erg=SQLExecDirect(V_OD_hstmt,query,SQL_NTS);   
     if ((V_OD_erg != SQL_SUCCESS) && (V_OD_erg != SQL_SUCCESS_WITH_INFO))
     {
        printf("Error in Select %d\n",V_OD_erg);
