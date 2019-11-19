@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <errno.h>
+#include <stdbool.h>
 
 #include <ap_db_vhostreader.h>
  

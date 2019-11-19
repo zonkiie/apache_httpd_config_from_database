@@ -35,9 +35,20 @@ void get_odbc_datasources()
 	SQLFreeHandle(SQL_HANDLE_ENV, env);
 }
 
-void config_odbc()
+bool config_odbc(const char * driver, const char * dsn)
 {
 	// use SQLConfigDataSource
+	bool ret = SQLConfigDataSource(NULL, ODBC_ADD_SYS_DSN, driver, dsn);
+	if(!ret)
+	{
+		DWORD errCode;
+		char errBuf[SQL_MAX_MESSAGE_LENGTH];
+		WORD msgLen;
+		SQLInstallerError(1, &errCode, errBuf, SQL_MAX_MESSAGE_LENGTH, &msgLen);
+		fprintf(stderr, "%s\n", errBuf);
+		return false;
+	}
+	return true;
 }
 
 // source from: http://www.unixodbc.org/doc/ProgrammerManual/Tutorial/resul.html

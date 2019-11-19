@@ -9,6 +9,7 @@
 
 #define _cleanup_cstr_ __attribute((cleanup(free_cstr))) 
 void free_cstr(char ** str);
+bool config_odbc(const char * driver, const char * dsn);
 void get_odbc_datasources();
 
 #endif
