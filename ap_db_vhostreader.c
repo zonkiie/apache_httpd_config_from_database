@@ -123,31 +123,18 @@ void exec_obdc_query(const char * datasource, const char * query)
 		printf("Error in Select %d\n",V_OD_erg);
 		SQLGetDiagRec(SQL_HANDLE_DBC, V_OD_hdbc,1, V_OD_stat,&V_OD_err,V_OD_msg,100,&V_OD_mlen);
 		printf("%s (%d)\n",V_OD_msg,V_OD_err);
-		SQLFreeHandle(SQL_HANDLE_STMT,V_OD_hstmt);
-		SQLDisconnect(V_OD_hdbc);
-		SQLFreeHandle(SQL_HANDLE_DBC,V_OD_hdbc);
-		SQLFreeHandle(SQL_HANDLE_ENV, V_OD_Env);
-		exit(0);
 	}
 	V_OD_erg=SQLNumResultCols(V_OD_hstmt,&V_OD_colanz);
 	if ((V_OD_erg != SQL_SUCCESS) && (V_OD_erg != SQL_SUCCESS_WITH_INFO))
 	{
-		SQLFreeHandle(SQL_HANDLE_STMT,V_OD_hstmt);
-		SQLDisconnect(V_OD_hdbc);
-		SQLFreeHandle(SQL_HANDLE_DBC,V_OD_hdbc);
-		SQLFreeHandle(SQL_HANDLE_ENV, V_OD_Env);
-		exit(0);
+		goto cleanup;
 	}
 	printf("Number of Columns %d\n",V_OD_colanz);
 	V_OD_erg=SQLRowCount(V_OD_hstmt,&V_OD_rowanz);
 	if ((V_OD_erg != SQL_SUCCESS) && (V_OD_erg != SQL_SUCCESS_WITH_INFO))
 	{
 		printf("Number ofRowCount %d\n",V_OD_erg);
-		SQLFreeHandle(SQL_HANDLE_STMT,V_OD_hstmt);
-		SQLDisconnect(V_OD_hdbc);
-		SQLFreeHandle(SQL_HANDLE_DBC,V_OD_hdbc);
-		SQLFreeHandle(SQL_HANDLE_ENV, V_OD_Env);
-		exit(0);
+		goto cleanup;
 	}
 	printf("Number of Rows %d\n",V_OD_rowanz);
 	if(V_OD_rowanz > 0)
@@ -158,6 +145,7 @@ void exec_obdc_query(const char * datasource, const char * query)
 			V_OD_erg=SQLFetch(V_OD_hstmt);  
 		}
 	}
+cleanup:
 	SQLFreeHandle(SQL_HANDLE_STMT,V_OD_hstmt);
 	SQLDisconnect(V_OD_hdbc);
 	SQLFreeHandle(SQL_HANDLE_DBC,V_OD_hdbc);
