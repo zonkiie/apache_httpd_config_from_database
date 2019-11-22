@@ -51,8 +51,9 @@ bool config_odbc(const char * driver, const char * dsn)
 	return true;
 }
 
-// source from: http://www.unixodbc.org/doc/ProgrammerManual/Tutorial/resul.html
-void exec_obdc_query(const char * datasource, const char * username, const char * password, char * query)
+// source from: http://www.unixodbc.org/doc/ProgrammerManual/Tutorial/resul.html , https://www.easysoft.com/developer/languages/c/odbc_tutorial.html
+//void exec_obdc_query(const char * datasource, const char * username, const char * password, char * query)
+void exec_obdc_query(const char * datasource, const char * query)
 {
 	SQLHSTMT V_OD_hstmt;   // Handle for a statement
 	SQLINTEGER V_OD_err,V_OD_id,V_OD_rowanz;
@@ -66,18 +67,35 @@ void exec_obdc_query(const char * datasource, const char * username, const char 
 	V_OD_msg[200];
 	SQLBindCol(V_OD_hstmt,1,SQL_C_CHAR, &V_OD_buffer,200,&V_OD_err);
 	SQLBindCol(V_OD_hstmt,2,SQL_C_ULONG,&V_OD_id,sizeof(V_OD_id),&V_OD_err);
+	// 1. allocate Environment handle and register version 
+	V_OD_erg=SQLAllocHandle(SQL_HANDLE_ENV,SQL_NULL_HANDLE,&V_OD_Env);
+	if ((V_OD_erg != SQL_SUCCESS) && (V_OD_erg != SQL_SUCCESS_WITH_INFO))
+	{
+		printf("Error AllocHandle\n");
+		exit(0);
+	}
+	V_OD_erg=SQLSetEnvAttr(V_OD_Env, SQL_ATTR_ODBC_VERSION, (void*)SQL_OV_ODBC3, 0); 
+	if ((V_OD_erg != SQL_SUCCESS) && (V_OD_erg != SQL_SUCCESS_WITH_INFO))
+	{
+		printf("Error SetEnv\n");
+		SQLFreeHandle(SQL_HANDLE_ENV, V_OD_Env);
+		exit(0);
+	}
 	V_OD_erg = SQLAllocHandle(SQL_HANDLE_DBC, V_OD_Env, &V_OD_hdbc); 
 	if ((V_OD_erg != SQL_SUCCESS) && (V_OD_erg != SQL_SUCCESS_WITH_INFO))
 	{
-		printf("Error AllocHDB %d\n",V_OD_erg);
+		printf("Error AllocHDB %d.\n",V_OD_erg);
 		SQLFreeHandle(SQL_HANDLE_ENV, V_OD_Env);
 		exit(0);
 	}
 	SQLSetConnectAttr(V_OD_hdbc, SQL_LOGIN_TIMEOUT, (SQLPOINTER *)5, 0);
 	// 3. Connect to the datasource "web" 
-	V_OD_erg = SQLConnect(V_OD_hdbc, (SQLCHAR*) datasource, SQL_NTS,
+	/*V_OD_erg = SQLConnect(V_OD_hdbc, (SQLCHAR*) datasource, SQL_NTS,
                                      (SQLCHAR*) username, SQL_NTS,
-                                     (SQLCHAR*) password, SQL_NTS);
+                                     (SQLCHAR*) password, SQL_NTS);*/
+	V_OD_erg = SQLDriverConnect(V_OD_hdbc, NULL, datasource, SQL_NTS,
+									NULL, 0, NULL,
+									SQL_DRIVER_COMPLETE);
 	if ((V_OD_erg != SQL_SUCCESS) && (V_OD_erg != SQL_SUCCESS_WITH_INFO))
 	{
 		printf("Error SQLConnect %d\n",V_OD_erg);
@@ -132,12 +150,14 @@ void exec_obdc_query(const char * datasource, const char * username, const char 
 		exit(0);
 	}
 	printf("Number of Rows %d\n",V_OD_rowanz);
-	V_OD_erg=SQLFetch(V_OD_hstmt);  
-	while(V_OD_erg != SQL_NO_DATA)
+	if(V_OD_rowanz > 0)
 	{
-		printf("Result: %d %s\n",V_OD_id,V_OD_buffer);
-		V_OD_erg=SQLFetch(V_OD_hstmt);  
-	}  ;
+		while((V_OD_erg=SQLFetch(V_OD_hstmt)) != SQL_NO_DATA)
+		{
+			printf("Result: %d %s\n",V_OD_id,V_OD_buffer);
+			V_OD_erg=SQLFetch(V_OD_hstmt);  
+		}
+	}
 	SQLFreeHandle(SQL_HANDLE_STMT,V_OD_hstmt);
 	SQLDisconnect(V_OD_hdbc);
 	SQLFreeHandle(SQL_HANDLE_DBC,V_OD_hdbc);

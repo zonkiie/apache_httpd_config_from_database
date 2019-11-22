@@ -88,8 +88,10 @@ int main(int argc, char *argv[])
 // 	}
 // 
 	get_odbc_datasources();
-	_cleanup_cstr_ char * dsn = strdup("DSN=sqlite\0DATABASE=/tmp/testdb.sqlite\0\0");
-	_cleanup_cstr_ char * driver = strdup("SQLite3");
-	if(!config_odbc(driver, dsn)) return EXIT_FAILURE;
+	//_cleanup_cstr_ char * dsn = strdup("DSN=sqlite\0Database=/tmp/testdb.sqlite\0\0");
+	_cleanup_cstr_ char * dsn = strdup("Driver=SQLITE3;Database=/tmp/testdb.sqlite;");
+	/*_cleanup_cstr_ char * driver = strdup("SQLite3");
+	if(!config_odbc(driver, dsn)) return EXIT_FAILURE;*/
+	exec_obdc_query(dsn, "select 1+1, 2+2, 3+3;");
 	return fuse_main(argc, argv, &null_oper, NULL);
 }
