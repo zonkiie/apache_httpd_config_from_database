@@ -52,6 +52,7 @@ bool config_odbc(const char * driver, const char * dsn)
 }
 
 // source from: http://www.unixodbc.org/doc/ProgrammerManual/Tutorial/resul.html , https://www.easysoft.com/developer/languages/c/odbc_tutorial.html
+// https://www.easysoft.com/developer/languages/c/examples/ReadingMultipleLongTextFields.html
 //void exec_obdc_query(const char * datasource, const char * username, const char * password, char * query)
 void exec_obdc_query(const char * datasource, const char * query)
 {
