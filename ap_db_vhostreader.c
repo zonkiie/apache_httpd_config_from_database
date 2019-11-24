@@ -58,7 +58,7 @@ void exec_obdc_query(const char * datasource, const char * query)
 {
 	SQLHSTMT V_OD_hstmt = SQL_NULL_HSTMT;;   // Handle for a statement
 	SQLINTEGER V_OD_err;
-	SQLLEN V_OD_rowanz, bind_err;
+	SQLLEN bind_err;
 	SQLSMALLINT V_OD_mlen,V_OD_colanz;
 	SQLRETURN V_OD_erg;
 	SQLHDBC V_OD_hdbc = SQL_NULL_HDBC;
@@ -119,13 +119,6 @@ void exec_obdc_query(const char * datasource, const char * query)
 	V_OD_erg=SQLNumResultCols(V_OD_hstmt,&V_OD_colanz);
 	if ((V_OD_erg != SQL_SUCCESS) && (V_OD_erg != SQL_SUCCESS_WITH_INFO)) goto cleanup;
 	printf("Number of Columns %d\n",V_OD_colanz);
-	V_OD_erg=SQLRowCount(V_OD_hstmt,&V_OD_rowanz);
-	if ((V_OD_erg != SQL_SUCCESS) && (V_OD_erg != SQL_SUCCESS_WITH_INFO))
-	{
-		fprintf(stderr, "Number of RowCount %d\n",V_OD_erg);
-		goto cleanup;
-	}
-	printf("Number of Rows %ld\n",V_OD_rowanz);
 	while((V_OD_erg=SQLFetch(V_OD_hstmt)) == SQL_SUCCESS)
 	{
 		for(int col = 0; col < V_OD_colanz; col++)
