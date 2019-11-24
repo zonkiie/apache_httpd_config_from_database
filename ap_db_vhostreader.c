@@ -10,6 +10,30 @@ void free_cstr(char ** str)
 	*str = NULL;
 }
 
+void free_hdbc(SQLHDBC * hdbc)
+{
+    if (* hdbc!=SQL_NULL_HDBC) {
+        SQLDisconnect(* hdbc);
+        SQLFreeHandle(SQL_HANDLE_DBC, * hdbc);
+		* hdbc = SQL_NULL_HDBC;
+    }
+}
+
+void free_hstmt(SQLHSTMT * hstmt)
+{
+	if (* hstmt!=SQL_NULL_HSTMT) {
+        SQLFreeHandle(SQL_HANDLE_STMT, * hstmt);
+		* hstmt = SQL_NULL_HSTMT;
+	}
+}
+
+void free_henv(SQLHENV * env)
+{
+    if (*env!=SQL_NULL_HENV) {
+		SQLFreeHandle(SQL_HANDLE_ENV, *env);
+		*env = SQL_NULL_HENV;
+    }
+}
 
 void get_odbc_datasources()
 {
@@ -56,7 +80,7 @@ bool config_odbc(const char * driver, const char * dsn)
 //void exec_obdc_query(const char * datasource, const char * username, const char * password, char * query)
 void exec_obdc_query(const char * datasource, const char * query)
 {
-	SQLHSTMT V_OD_hstmt = SQL_NULL_HSTMT;;   // Handle for a statement
+	SQLHSTMT V_OD_hstmt = SQL_NULL_HSTMT;   // Handle for a statement
 	SQLINTEGER V_OD_err;
 	SQLLEN bind_err;
 	SQLSMALLINT V_OD_mlen,V_OD_colanz;
@@ -132,20 +156,7 @@ void exec_obdc_query(const char * datasource, const char * query)
 		printf("\n");
 	}
 cleanup:
-	if (V_OD_hstmt!=SQL_NULL_HSTMT) {
-        SQLFreeHandle(SQL_HANDLE_STMT, V_OD_hstmt);
-		V_OD_hstmt = SQL_NULL_HSTMT;
-	}
-
-    if (V_OD_hdbc!=SQL_NULL_HDBC) {
-        SQLDisconnect(V_OD_hdbc);
-        SQLFreeHandle(SQL_HANDLE_DBC, V_OD_hdbc);
-		V_OD_hdbc = SQL_NULL_HDBC;
-    }
-
-    if (V_OD_Env!=SQL_NULL_HENV) {
-		SQLFreeHandle(SQL_HANDLE_ENV, V_OD_Env);
-		V_OD_Env = SQL_NULL_HENV;
-    }
-	
+	free_hstmt(&V_OD_hstmt);
+	free_hdbc(&V_OD_hdbc);
+	free_henv(&V_OD_Env);
 }
