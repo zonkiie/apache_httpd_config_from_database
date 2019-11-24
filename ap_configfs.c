@@ -7,10 +7,11 @@
 #include <fuse.h>
 #include <includes.h>
 
-static int null_getattr(const char *path, struct stat *stbuf,
-			struct fuse_file_info *fi)
+/*static int null_getattr(const char *path, struct stat *stbuf,
+			struct fuse_file_info *fi)*/
+static int null_getattr(const char *path, struct stat *stbuf)
 {
-	(void) fi;
+	//(void) fi;
 
 	if(strcmp(path, "/") != 0)
 		return -ENOENT;
@@ -92,6 +93,7 @@ int main(int argc, char *argv[])
 	_cleanup_cstr_ char * dsn = strdup("Driver=SQLITE3;Database=/tmp/testdb.sqlite;");
 	/*_cleanup_cstr_ char * driver = strdup("SQLite3");
 	if(!config_odbc(driver, dsn)) return EXIT_FAILURE;*/
-	exec_obdc_query(dsn, "select 1+1, 2+2, 3+3;");
+	exec_obdc_query(dsn, "select 'two' as one, 'four' as two, 'six' as three union select 10+10 as one, 20+20 as two, 30+30 as three;");
+	return 0;
 	return fuse_main(argc, argv, &null_oper, NULL);
 }

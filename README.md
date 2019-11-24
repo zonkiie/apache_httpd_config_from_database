@@ -9,3 +9,13 @@ Get apache http server config parts from database. These parts are either given 
  * unixodbc-dev
  * libfuse
  * libfuse-dev
+
+## How to compile
+ * Create autotools Files with
+    sh ./bootstrap.sh
+ * Configure
+    ./configure
+ * Build
+    make
+
+ 
