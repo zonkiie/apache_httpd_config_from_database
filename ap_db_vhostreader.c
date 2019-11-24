@@ -70,19 +70,19 @@ void exec_obdc_query(const char * datasource, const char * query)
 	V_OD_erg=SQLAllocHandle(SQL_HANDLE_ENV,SQL_NULL_HANDLE,&V_OD_Env);
 	if ((V_OD_erg != SQL_SUCCESS) && (V_OD_erg != SQL_SUCCESS_WITH_INFO))
 	{
-		printf("Error AllocHandle\n");
+		fprintf(stderr, "Error AllocHandle\n");
 		exit(0);
 	}
 	V_OD_erg=SQLSetEnvAttr(V_OD_Env, SQL_ATTR_ODBC_VERSION, (void*)SQL_OV_ODBC3, 0); 
 	if ((V_OD_erg != SQL_SUCCESS) && (V_OD_erg != SQL_SUCCESS_WITH_INFO))
 	{
-		printf("Error SetEnv\n");
+		fprintf(stderr, "Error SetEnv\n");
 		goto cleanup;
 	}
 	V_OD_erg = SQLAllocHandle(SQL_HANDLE_DBC, V_OD_Env, &V_OD_hdbc); 
 	if ((V_OD_erg != SQL_SUCCESS) && (V_OD_erg != SQL_SUCCESS_WITH_INFO))
 	{
-		printf("Error AllocHDB %d.\n",V_OD_erg);
+		fprintf(stderr, "Error AllocHDB %d.\n",V_OD_erg);
 		goto cleanup;
 	}
 	SQLSetConnectAttr(V_OD_hdbc, SQL_LOGIN_TIMEOUT, (SQLPOINTER *)5, 0);
@@ -93,10 +93,10 @@ void exec_obdc_query(const char * datasource, const char * query)
 									SQL_DRIVER_COMPLETE);
 	if ((V_OD_erg != SQL_SUCCESS) && (V_OD_erg != SQL_SUCCESS_WITH_INFO))
 	{
-		printf("Error SQLConnect %d\n",V_OD_erg);
+		fprintf(stderr, "Error SQLConnect %d\n",V_OD_erg);
 		SQLGetDiagRec(SQL_HANDLE_DBC, V_OD_hdbc,1, 
 		              V_OD_stat, &V_OD_err,V_OD_msg,100,&V_OD_mlen);
-		printf("%s (%d)\n",V_OD_msg,V_OD_err);
+		fprintf(stderr, "%s (%d)\n",V_OD_msg,V_OD_err);
 		SQLFreeHandle(SQL_HANDLE_ENV, V_OD_Env);
 		exit(0);
 	}
@@ -104,17 +104,17 @@ void exec_obdc_query(const char * datasource, const char * query)
 	V_OD_erg=SQLAllocHandle(SQL_HANDLE_STMT, V_OD_hdbc, &V_OD_hstmt);
 	if ((V_OD_erg != SQL_SUCCESS) && (V_OD_erg != SQL_SUCCESS_WITH_INFO))
 	{
-		printf("Fehler im AllocStatement %d\n",V_OD_erg);
+		fprintf(stderr, "Fehler im AllocStatement %d\n",V_OD_erg);
 		SQLGetDiagRec(SQL_HANDLE_DBC, V_OD_hdbc,1, V_OD_stat,&V_OD_err,V_OD_msg,100,&V_OD_mlen);
-		printf("%s (%d)\n",V_OD_msg,V_OD_err);
+		fprintf(stderr, "%s (%d)\n",V_OD_msg,V_OD_err);
 		goto cleanup;
 	}
 	V_OD_erg=SQLExecDirect(V_OD_hstmt,(SQLCHAR*)query,SQL_NTS);
 	if ((V_OD_erg != SQL_SUCCESS) && (V_OD_erg != SQL_SUCCESS_WITH_INFO))
 	{
-		printf("Error in Select %d\n",V_OD_erg);
+		fprintf(stderr, "Error in Select %d\n",V_OD_erg);
 		SQLGetDiagRec(SQL_HANDLE_DBC, V_OD_hdbc,1, V_OD_stat,&V_OD_err,V_OD_msg,100,&V_OD_mlen);
-		printf("%s (%d)\n",V_OD_msg,V_OD_err);
+		fprintf(stderr, "%s (%d)\n",V_OD_msg,V_OD_err);
 	}
 	V_OD_erg=SQLNumResultCols(V_OD_hstmt,&V_OD_colanz);
 	if ((V_OD_erg != SQL_SUCCESS) && (V_OD_erg != SQL_SUCCESS_WITH_INFO)) goto cleanup;
@@ -122,7 +122,7 @@ void exec_obdc_query(const char * datasource, const char * query)
 	V_OD_erg=SQLRowCount(V_OD_hstmt,&V_OD_rowanz);
 	if ((V_OD_erg != SQL_SUCCESS) && (V_OD_erg != SQL_SUCCESS_WITH_INFO))
 	{
-		printf("Number of RowCount %d\n",V_OD_erg);
+		fprintf(stderr, "Number of RowCount %d\n",V_OD_erg);
 		goto cleanup;
 	}
 	printf("Number of Rows %ld\n",V_OD_rowanz);
