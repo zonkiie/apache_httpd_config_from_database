@@ -104,65 +104,69 @@ bool alloc_handles_env(SQLHENV * henv, SQLHDBC * hdbc)
 	return true;
 }
 
+bool odbc_connect(SQLHDBC hdbc, const char * datasource)
+{
+	SQLRETURN odbc_result;
+	if(!odbc_is_ok(odbc_result = SQLDriverConnect(hdbc, NULL, (SQLCHAR*)datasource, SQL_NTS, NULL, 0, NULL, SQL_DRIVER_COMPLETE)))
+	{
+		_cleanup_cstr_ char * error_text = NULL;
+		extract_error(&error_text, hdbc, "Error SQLConnect", odbc_result);
+		fprintf(stderr, "%s\n",error_text);
+		return false;
+	}
+	return true;
+}
+
+bool extract_error(char ** target, SQLHDBC hdbc, const char * subject, SQLRETURN result)
+{
+	char message_stat[10],  message_text[200];
+	SQLSMALLINT errortext_len;
+	SQLINTEGER error_number;
+	SQLGetDiagRec(SQL_HANDLE_DBC, hdbc, 1, message_stat, &error_number, message_text, 100, &errortext_len);
+	if(asprintf(target, "%s %d %s (%d)", subject, result, message_text, error_number) > 0) return true;
+	else return false;
+}
+
 // source from: http://www.unixodbc.org/doc/ProgrammerManual/Tutorial/resul.html , https://www.easysoft.com/developer/languages/c/odbc_tutorial.html
 // https://www.easysoft.com/developer/languages/c/examples/ReadingMultipleLongTextFields.html
 //void exec_obdc_query(const char * datasource, const char * username, const char * password, char * query)
 void exec_obdc_query(const char * datasource, const char * query)
 {
-	SQLHSTMT V_OD_hstmt = SQL_NULL_HSTMT;   // Handle for a statement
-	SQLINTEGER V_OD_err;
-	SQLLEN bind_err;
-	SQLSMALLINT V_OD_mlen,V_OD_colanz;
-	SQLRETURN V_OD_erg;
-	SQLHDBC V_OD_hdbc = SQL_NULL_HDBC;
-	SQLHENV V_OD_Env = SQL_NULL_HENV;
-	char
-	V_OD_stat[10], // Status SQL
-	V_OD_msg[200];
-	if(!alloc_handles_env(&V_OD_Env, &V_OD_hdbc)) goto cleanup;
-	// 3. Connect to the datasource "web" 
-	V_OD_erg = SQLDriverConnect(V_OD_hdbc, NULL, (SQLCHAR*)datasource, SQL_NTS, NULL, 0, NULL, SQL_DRIVER_COMPLETE);
-	if ((V_OD_erg != SQL_SUCCESS) && (V_OD_erg != SQL_SUCCESS_WITH_INFO))
+	SQLHSTMT odbc_statement = SQL_NULL_HSTMT;   // Handle for a statement
+	SQLSMALLINT num_columns;
+	SQLRETURN command_result;
+	SQLHDBC odbc_conn = SQL_NULL_HDBC;
+	SQLHENV odbc_env = SQL_NULL_HENV;
+	_cleanup_cstr_ char * error_text = NULL;
+	if(!alloc_handles_env(&odbc_env, &odbc_conn)) goto cleanup;
+	if(!odbc_connect(odbc_conn, datasource)) goto cleanup;
+	if(!odbc_is_ok(command_result=SQLAllocHandle(SQL_HANDLE_STMT, odbc_conn, &odbc_statement)))
 	{
-		fprintf(stderr, "Error SQLConnect %d\n",V_OD_erg);
-		SQLGetDiagRec(SQL_HANDLE_DBC, V_OD_hdbc,1, V_OD_stat, &V_OD_err,V_OD_msg,100,&V_OD_mlen);
-		fprintf(stderr, "%s (%d)\n",V_OD_msg,V_OD_err);
+		extract_error(&error_text, odbc_conn, "Error in AllocStatement ", command_result);
+		fprintf(stderr, "%s\n",error_text);
 		goto cleanup;
 	}
-	printf("Connected !\n");
-	V_OD_erg=SQLAllocHandle(SQL_HANDLE_STMT, V_OD_hdbc, &V_OD_hstmt);
-	if ((V_OD_erg != SQL_SUCCESS) && (V_OD_erg != SQL_SUCCESS_WITH_INFO))
+	if(!odbc_is_ok(command_result=SQLExecDirect(odbc_statement,(SQLCHAR*)query,SQL_NTS)))
 	{
-		fprintf(stderr, "Fehler im AllocStatement %d\n",V_OD_erg);
-		SQLGetDiagRec(SQL_HANDLE_DBC, V_OD_hdbc,1, V_OD_stat,&V_OD_err,V_OD_msg,100,&V_OD_mlen);
-		fprintf(stderr, "%s (%d)\n",V_OD_msg,V_OD_err);
+		extract_error(&error_text, odbc_conn, "Error in Select ", command_result);
+		fprintf(stderr, "%s\n",error_text);
 		goto cleanup;
 	}
-	V_OD_erg=SQLExecDirect(V_OD_hstmt,(SQLCHAR*)query,SQL_NTS);
-	if ((V_OD_erg != SQL_SUCCESS) && (V_OD_erg != SQL_SUCCESS_WITH_INFO))
+	if(!odbc_is_ok(command_result=SQLNumResultCols(odbc_statement,&num_columns))) goto cleanup;
+	while((command_result=SQLFetch(odbc_statement)) == SQL_SUCCESS)
 	{
-		fprintf(stderr, "Error in Select %d\n",V_OD_erg);
-		SQLGetDiagRec(SQL_HANDLE_DBC, V_OD_hdbc,1, V_OD_stat,&V_OD_err,V_OD_msg,100,&V_OD_mlen);
-		fprintf(stderr, "%s (%d)\n",V_OD_msg,V_OD_err);
-		goto cleanup;
-	}
-	V_OD_erg=SQLNumResultCols(V_OD_hstmt,&V_OD_colanz);
-	if ((V_OD_erg != SQL_SUCCESS) && (V_OD_erg != SQL_SUCCESS_WITH_INFO)) goto cleanup;
-	printf("Number of Columns %d\n",V_OD_colanz);
-	while((V_OD_erg=SQLFetch(V_OD_hstmt)) == SQL_SUCCESS)
-	{
-		for(int col = 0; col < V_OD_colanz; col++)
+		for(int col = 0; col < num_columns; col++)
 		{
 			const int maxDataLength = 1024;
 			_cleanup_cstr_ char * colData = malloc(maxDataLength);
 			SQLLEN retrievedDataLength = 0;
-			int retcode = SQLGetData(V_OD_hstmt, col + 1, SQL_C_CHAR, colData, maxDataLength, &retrievedDataLength);
+			int retcode = SQLGetData(odbc_statement, col + 1, SQL_C_CHAR, colData, maxDataLength, &retrievedDataLength);
 			if(retcode == SQL_SUCCESS) printf("Col %d: %s, retrievedDataLength: %ld ", col, colData, retrievedDataLength);
 		}
 		printf("\n");
 	}
 cleanup:
-	free_hstmt(&V_OD_hstmt);
-	free_hdbc(&V_OD_hdbc);
-	free_henv(&V_OD_Env);
+	free_hstmt(&odbc_statement);
+	free_hdbc(&odbc_conn);
+	free_henv(&odbc_env);
 }

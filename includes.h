@@ -1,6 +1,8 @@
 #ifndef __includes__
 #define __includes__
 
+#define _GNU_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
