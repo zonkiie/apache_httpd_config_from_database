@@ -15,9 +15,13 @@ void free_cstr(char ** str);
 void free_hdbc(SQLHDBC * hdbc);
 void free_hstmt(SQLHSTMT * hstmt);
 void free_henv(SQLHENV * env);
+
 bool config_odbc(const char * driver, const char * dsn);
+bool odbc_is_ok(SQLRETURN value);
+bool alloc_handles_env(SQLHENV * henv, SQLHDBC * hdbc);
 //void exec_obdc_query(const char * datasource, const char * username, const char * password, char * query);
 void exec_obdc_query(const char * datasource, const char * query);
 void get_odbc_datasources();
+
 
 #endif
