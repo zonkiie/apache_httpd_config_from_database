@@ -1,29 +1,14 @@
 #ifndef __ap_db_vhostreader__
 #define __ap_db_vhostreader__
 
-#include <sql.h>
-#include <sqlext.h>
-#include <sqltypes.h>
-#include <sqlucode.h>
-#include <odbcinst.h>
 
 #define _cleanup_cstr_ __attribute((cleanup(free_cstr)))
-#define _cleanup_hdbc_ __attribute((cleanup(free_hdbc)))
-#define _cleanup_hstmt_ __attribute((cleanup(free_hstmt)))
-#define _cleanup_henv_ __attribute((cleanup(free_henv)))
+#define _autoclose_fstream_ __attribute((cleanup(free_fstream)))
 void free_cstr(char ** str);
-void free_hdbc(SQLHDBC * hdbc);
-void free_hstmt(SQLHSTMT * hstmt);
-void free_henv(SQLHENV * env);
+void free_fstream(FILE ** stream);
 
-bool config_odbc(const char * driver, const char * dsn);
-bool odbc_is_ok(SQLRETURN value);
-bool alloc_handles_env(SQLHENV * henv, SQLHDBC * hdbc);
-bool odbc_connect(SQLHDBC hdbc, const char * datasource);
-bool extract_error(char ** target, SQLHDBC hdbc, const char * subject, SQLRETURN result);
 //void exec_obdc_query(const char * datasource, const char * username, const char * password, char * query);
-void exec_obdc_query(const char * datasource, const char * query);
-void get_odbc_datasources();
-
+void exec_odbc_query_example(const char * datasource, const char * query);
+void exec_odbc_query(char ** result_string, const char * datasource, const char * query);
 
 #endif
