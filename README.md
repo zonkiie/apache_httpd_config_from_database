@@ -18,7 +18,7 @@ Get apache http server config parts from database. These parts are either given 
 
 ## How to compile
  * Create autotools Files with
-    sh ./bootstrap.sh
+    sh ./autogen.sh
  * Configure
     ./configure
  * Build
