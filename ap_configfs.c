@@ -51,8 +51,13 @@ static int null_read(const char *path, char *buf, size_t size,
 // 		return 0;
 
 	memset(buf, 0, size);
-	strcpy(buf, "Bla");
-	return size;
+	//strcpy(buf, "Bla");
+	_cleanup_cstr_ char * dsn = strdup("Driver=SQLITE3;Database=/tmp/testdb.sqlite;");
+	_cleanup_cstr_ char * vhostlist = NULL;
+	exec_odbc_query(&vhostlist, dsn, "select 'Use Vhost example example.com /home/example.com' as entry union select 'Use VHost example2 example2.com /home/example2.com' as entry union select 'Use Redirect example3 example3.com https://www.google.de' as entry;");
+	strcpy(buf, vhostlist + offset);
+	return strlen(buf);
+	//return size;
 }
 
 static struct fuse_operations null_oper = {
@@ -88,15 +93,17 @@ int main(int argc, char *argv[])
 // 		return 1;
 // 	}
 // 
-	get_odbc_datasources();
+	//get_odbc_datasources();
+	
 	//_cleanup_cstr_ char * dsn = strdup("DSN=sqlite\0Database=/tmp/testdb.sqlite\0\0");
-	_cleanup_cstr_ char * dsn = strdup("Driver=SQLITE3;Database=/tmp/testdb.sqlite;");
 	/*_cleanup_cstr_ char * driver = strdup("SQLite3");
 	if(!config_odbc(driver, dsn)) return EXIT_FAILURE;*/
 	//exec_obdc_query(dsn, "select 'two' as one, 'four' as two, 'six' as three union select 10+10 as one, 20+20 as two, 30+30 as three;");
+	
+	/*_cleanup_cstr_ char * dsn = strdup("Driver=SQLITE3;Database=/tmp/testdb.sqlite;");
 	_cleanup_cstr_ char * vhostlist = NULL;
-	exec_odbc_query(&vhostlist, dsn, "select 'two' as one, 'four' as two, 'six' as three union select 10+10 as one, 20+20 as two, 30+30 as three;");
+	exec_odbc_query(&vhostlist, dsn, "select 'Use Vhost example example.com /home/example.com' as entry union select 'Use VHost example2 example2.com /home/example2.com' as entry union select 'Use Redirect example3 example3.com https://www.google.de' as entry;");
 	printf("Vhostlist: %s\n", vhostlist);
-	return 0;
+	return 0;*/
 	return fuse_main(argc, argv, &null_oper, NULL);
 }

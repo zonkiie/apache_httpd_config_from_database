@@ -81,3 +81,9 @@ cleanup:
 	free_hdbc(&odbc_conn);
 	free_henv(&odbc_env);
 }
+
+char * build_string(const char * dsn, const char * query)
+{
+	
+}
+

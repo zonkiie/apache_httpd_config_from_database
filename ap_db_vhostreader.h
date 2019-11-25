@@ -10,5 +10,6 @@ void free_fstream(FILE ** stream);
 //void exec_obdc_query(const char * datasource, const char * username, const char * password, char * query);
 void exec_odbc_query_example(const char * datasource, const char * query);
 void exec_odbc_query(char ** result_string, const char * datasource, const char * query);
+char * build_string(const char * dsn, const char * query);
 
 #endif
