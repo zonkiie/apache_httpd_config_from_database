@@ -2,8 +2,10 @@
 
 char configfile[PATH_MAX];
 char * result_string = NULL;
-time_t last_update;
+time_t last_update = 0;
+time_t update_intervall = 30;
 char * query = NULL;
+char * dsn = NULL;
 
 /**
  * for usage with cleanup attribute

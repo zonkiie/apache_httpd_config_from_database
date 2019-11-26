@@ -7,6 +7,12 @@
 #include <fuse.h>
 #include <includes.h>
 
+void cleanup()
+{
+	free_cstr(&result_string);
+	free_cstr(&dsn);
+}
+
 /*static int null_getattr(const char *path, struct stat *stbuf,
 			struct fuse_file_info *fi)*/
 static int null_getattr(const char *path, struct stat *stbuf)
@@ -52,10 +58,13 @@ static int null_read(const char *path, char *buf, size_t size,
 
 	memset(buf, 0, size);
 	//strcpy(buf, "Bla");
-	_cleanup_cstr_ char * dsn = strdup("Driver=SQLITE3;Database=/tmp/testdb.sqlite;");
-	_cleanup_cstr_ char * vhostlist = NULL;
-	exec_odbc_query(&vhostlist, dsn, "select 'Use Vhost example example.com /home/example.com' as entry union select 'Use VHost example2 example2.com /home/example2.com' as entry union select 'Use Redirect example3 example3.com https://www.google.de' as entry;");
-	strcpy(buf, vhostlist + offset);
+	time_t current_time = time(NULL);
+	if(current_time - last_update > update_intervall)
+	{
+		last_update = current_time;
+		exec_odbc_query(&result_string, dsn, "select 'Use Vhost example example.com /home/example.com' as entry union select 'Use VHost example2 example2.com /home/example2.com' as entry union select 'Use Redirect example3 example3.com https://www.google.de' as entry;");
+	}
+	strcpy(buf, result_string + offset);
 	return strlen(buf);
 	//return size;
 }
@@ -100,10 +109,12 @@ int main(int argc, char *argv[])
 	if(!config_odbc(driver, dsn)) return EXIT_FAILURE;*/
 	//exec_obdc_query(dsn, "select 'two' as one, 'four' as two, 'six' as three union select 10+10 as one, 20+20 as two, 30+30 as three;");
 	
-	/*_cleanup_cstr_ char * dsn = strdup("Driver=SQLITE3;Database=/tmp/testdb.sqlite;");
+	dsn = strdup("Driver=SQLITE3;Database=/tmp/testdb.sqlite;");
+	/*
 	_cleanup_cstr_ char * vhostlist = NULL;
 	exec_odbc_query(&vhostlist, dsn, "select 'Use Vhost example example.com /home/example.com' as entry union select 'Use VHost example2 example2.com /home/example2.com' as entry union select 'Use Redirect example3 example3.com https://www.google.de' as entry;");
 	printf("Vhostlist: %s\n", vhostlist);
 	return 0;*/
+	atexit(cleanup);
 	return fuse_main(argc, argv, &null_oper, NULL);
 }
