@@ -1,24 +1,5 @@
 #include <includes.h>
 
-/**
- * for usage with cleanup attribute
- */
-void free_cstr(char ** str)
-{
-	if(*str == NULL) return;
-	free(*str);
-	*str = NULL;
-}
-
-void free_fstream(FILE ** stream)
-{
-	if(*stream != NULL)
-	{
-		fclose(*stream);
-		*stream = NULL;
-	}
-}
-
 void exec_odbc_query_example(const char * datasource, const char * query)
 {
 	SQLHSTMT odbc_statement = SQL_NULL_HSTMT;   // Handle for a statement
@@ -82,8 +63,10 @@ cleanup:
 	free_henv(&odbc_env);
 }
 
-char * build_string(const char * dsn, const char * query)
+char * build_string(const char * datasource, const char * query)
 {
-	
+	char * result_string = NULL;
+	exec_odbc_query(&result_string, datasource, query);
+	return result_string;
 }
 
