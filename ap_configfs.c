@@ -11,6 +11,8 @@ void cleanup()
 {
 	free_cstr(&result_string);
 	free_cstr(&dsn);
+	free_cstr(&query);
+	free_cstr(&mountpoint);
 }
 
 /*static int null_getattr(const char *path, struct stat *stbuf,
@@ -114,6 +116,8 @@ static int parse_cmdline_options(void *data, const char *arg, int key, struct fu
 	{
 		case KEY_HELP:
 			help();
+			fuse_opt_add_arg(outargs, "-h");
+			fuse_main(outargs->argc, outargs->argv, &null_oper, NULL);
 			exit(0);
 	}
 	return 1;
@@ -153,7 +157,7 @@ int main(int argc, char *argv[])
 	if(cparams.configfile != NULL) strcpy(configfile, cparams.configfile);
 	if(cparams.dsn != NULL) reassign_cstr(&dsn, cparams.dsn);
 	if(cparams.query != NULL) reassign_cstr(&query, cparams.query);
+	if(mountpoint != NULL) fuse_opt_add_arg(args, cparams.mountpoint);
 	if(strcmp(configfile, "")) parse_configfile(configfile);
-
-	//return fuse_main(args.argc, args.argv, &null_oper, NULL);
+	return fuse_main(args.argc, args.argv, &null_oper, NULL);
 }

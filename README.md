@@ -10,6 +10,9 @@ Get apache http server config parts from database. These parts are either given 
  * [https://www.easysoft.com/developer/languages/c/examples/ReadingMultipleLongTextFields.html](https://www.easysoft.com/developer/languages/c/examples/ReadingMultipleLongTextFields.html)
  * Code examples: [https://www.easysoft.com/developer/languages/c/examples/index.html](https://www.easysoft.com/developer/languages/c/examples/index.html)
 
+## Info for fuse
+ * [https://github.com/libfuse/libfuse/wiki/Option-Parsing](https://github.com/libfuse/libfuse/wiki/Option-Parsing)
+
 ## Required Libraries
  * unixodbc
  * unixodbc-dev

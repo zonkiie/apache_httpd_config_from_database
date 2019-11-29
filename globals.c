@@ -6,6 +6,7 @@ time_t last_update = 0;
 time_t update_intervall = 30;
 char * query = NULL;
 char * dsn = NULL;
+char * mountpoint = NULL;
 
 /**
  * for usage with cleanup attribute
