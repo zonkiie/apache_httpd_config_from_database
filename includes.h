@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <getopt.h>
+#include <stddef.h>
 #include <linux/limits.h>
 
 #include <globals.h>

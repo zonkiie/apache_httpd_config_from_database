@@ -63,7 +63,7 @@ static int null_read(const char *path, char *buf, size_t size,
 	{
 		last_update = current_time;
 		free_cstr(&result_string);
-		exec_odbc_query(&result_string, dsn, "select 'Use Vhost example example.com /home/example.com' as entry union select 'Use VHost example2 example2.com /home/example2.com' as entry union select 'Use Redirect example3 example3.com https://www.google.de' as entry;");
+		exec_odbc_query(&result_string, dsn, query);
 	}
 	strcpy(buf, result_string + offset);
 	return strlen(buf);
@@ -76,104 +76,84 @@ static struct fuse_operations null_oper = {
 	.read		= null_read,
 };
 
-int main(int argc, char *argv[])
+static void help()
 {
-// 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
-// 	struct fuse_cmdline_opts opts;
-// 	struct stat stbuf;
-// 
-// 	if (fuse_parse_cmdline(&args, &opts) != 0)
-// 		return 1;
-// 	fuse_opt_free_args(&args);
-// 
-// 	if (!opts.mountpoint) {
-// 		fprintf(stderr, "missing mountpoint parameter\n");
-// 		return 1;
-// 	}
-// 
-// 	if (stat(opts.mountpoint, &stbuf) == -1) {
-// 		fprintf(stderr ,"failed to access mountpoint %s: %s\n",
-// 			opts.mountpoint, strerror(errno));
-// 		free(opts.mountpoint);
-// 		return 1;
-// 	}
-// 	free(opts.mountpoint);
-// 	if (!S_ISREG(stbuf.st_mode)) {
-// 		fprintf(stderr, "mountpoint is not a regular file\n");
-// 		return 1;
-// 	}
-// 
-	//get_odbc_datasources();
-	
-	//_cleanup_cstr_ char * dsn = strdup("DSN=sqlite\0Database=/tmp/testdb.sqlite\0\0");
-	/*_cleanup_cstr_ char * driver = strdup("SQLite3");
-	if(!config_odbc(driver, dsn)) return EXIT_FAILURE;*/
-	//exec_obdc_query(dsn, "select 'two' as one, 'four' as two, 'six' as three union select 10+10 as one, 20+20 as two, 30+30 as three;");
-	strcpy(configfile, "");
-	dsn = strdup("Driver=SQLITE3;Database=/tmp/testdb.sqlite;");
-	/*
-	_cleanup_cstr_ char * vhostlist = NULL;
-	exec_odbc_query(&vhostlist, dsn, "select 'Use Vhost example example.com /home/example.com' as entry union select 'Use VHost example2 example2.com /home/example2.com' as entry union select 'Use Redirect example3 example3.com https://www.google.de' as entry;");
-	printf("Vhostlist: %s\n", vhostlist);
-	return 0;*/
-	
-	int show_help = 0, show_vhostlist = 0;
-	int option_index = 0, c = 0;
-	while(1)
+	puts("Command line has priority over Config file!");
+	puts("--configfile <configfile>, -c <configfile>");
+	puts("--dsn <dsn>");
+	puts("--query <query>");
+	puts("--update_intervall <update_intervall>");
+}
+
+struct params {
+     char *configfile;
+     char *query;
+     char *dsn;
+};
+
+enum {
+     KEY_HELP,
+     KEY_VERSION,
+};
+
+#define PARAMS_OPT(t, p, v) { t, offsetof(struct params, p), v }
+
+static struct fuse_opt ap_configfs_opts[] = {
+	PARAMS_OPT("--configfile %s", configfile, 0),
+	PARAMS_OPT("--dsn %s", dsn, 0),
+	PARAMS_OPT("--query %s", query, 0),
+	FUSE_OPT_KEY("-h",             KEY_HELP),
+	FUSE_OPT_KEY("--help",         KEY_HELP),
+	FUSE_OPT_END
+};
+
+
+static int parse_cmdline_options(void *data, const char *arg, int key, struct fuse_args *outargs)
+{
+	switch(key)
 	{
-		static struct option long_options[] = {
-			{"help", no_argument, 0, 0},
-			{"configfile", required_argument, 0, 0},
-			{"dsn", required_argument, 0, 0},
-			{"query", required_argument, 0, 0},
-			{"update_intervall", required_argument, 0, 0},
-			{0, 0, 0, 0}
-		};
-		c = getopt_long (argc, argv, "hc:", long_options, &option_index);
-		if(c == -1) break;
-		switch(c)
+		case KEY_HELP:
+			help();
+			exit(0);
+	}
+	return 1;
+}
+
+void init_configfile_list()
+{
+	const char * configfile_list[] = {"/etc/ap_configfs.conf", "./ap_configfs.conf", NULL};
+	for(int i = 0; configfile_list[i] != NULL; i++)
+	{
+		if(!access(configfile_list[i], F_OK))
 		{
-			case 0:
-			{
-				char* oname = (char*)long_options[option_index].name;
-				if(!strcmp(oname, "help")) show_help = 1;
-				if(!strcmp(oname, "dsn")) reassign_cstr(&dsn, optarg);
-				if(!strcmp(oname, "configfile")) strcpy(configfile, optarg);
-				if(!strcmp(oname, "query")) reassign_cstr(&query, optarg);
-				if(!strcmp(oname, "update_intervall")) update_intervall = atoi(optarg);
-				break;
-			}
-			case 1:
-			{
-				break;
-			}
-			case 'h':
-			{
-				show_help = 1;
-				break;
-			}
-			case 'c':
-			{
-				strcpy(configfile, optarg);
-				break;
-			}
-			default:
-				abort();
+			strcpy(configfile, configfile_list[i]);
+			break;
 		}
 	}
-	if(strcmp(configfile, ""))
-	{
-		parse_configfile(configfile);
-	}
-	if(show_help)
-	{
-		puts("Command line has priority over Config file!");
-		puts("--configfile=<configfile>, -c=<configfile>");
-		puts("--dsn=<dsn>");
-		puts("--query=<query>");
-		exit(0);
-	}
+}
+
+
+/**
+ * @see https://github.com/libfuse/libfuse/wiki/Option-Parsing
+ */
+int main(int argc, char *argv[])
+{
+	struct params cparams;
+
+    memset(&cparams, 0, sizeof(cparams));
+	strcpy(configfile, "");
+	init_configfile_list();
+	//_cleanup_cstr_ char * vhostlist = NULL;
 
 	atexit(cleanup);
-	return fuse_main(argc, argv, &null_oper, NULL);
+	//return fuse_main(argc, argv, &null_oper, NULL);
+	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
+
+	fuse_opt_parse(&args, &cparams, ap_configfs_opts, parse_cmdline_options);
+	if(cparams.configfile != NULL) strcpy(configfile, cparams.configfile);
+	if(cparams.dsn != NULL) reassign_cstr(&dsn, cparams.dsn);
+	if(cparams.query != NULL) reassign_cstr(&query, cparams.query);
+	if(strcmp(configfile, "")) parse_configfile(configfile);
+
+	//return fuse_main(args.argc, args.argv, &null_oper, NULL);
 }
