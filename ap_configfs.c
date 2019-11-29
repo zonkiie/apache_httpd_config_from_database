@@ -157,7 +157,7 @@ int main(int argc, char *argv[])
 	if(cparams.configfile != NULL) strcpy(configfile, cparams.configfile);
 	if(cparams.dsn != NULL) reassign_cstr(&dsn, cparams.dsn);
 	if(cparams.query != NULL) reassign_cstr(&query, cparams.query);
-	if(mountpoint != NULL) fuse_opt_add_arg(args, cparams.mountpoint);
+	if(mountpoint != NULL) fuse_opt_add_arg(&args, mountpoint);
 	if(strcmp(configfile, "")) parse_configfile(configfile);
 	return fuse_main(args.argc, args.argv, &null_oper, NULL);
 }
