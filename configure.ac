@@ -6,6 +6,7 @@ AC_HAVE_LIBRARY(odbcinst)
 AC_HAVE_LIBRARY(fuse)
 AC_HAVE_LIBRARY(crypt)
 AC_HAVE_LIBRARY(pthread)
+AC_DEFINE([CONFIGFILES], [{"/etc/ap_configfs.conf", "./ap_configfs.conf", NULL}])
 AC_CONFIG_FILES([Makefile])
 #AC_CONFIG_HEADERS([config.h])
 EXTRA_CFLAGS=-I.

@@ -35,9 +35,9 @@ void exec_odbc_query(char ** rstring, const char * datasource, const char * quer
 	size_t size = 0;
 	_autoclose_fstream_ FILE *stream = open_memstream (rstring, &size);
 	const int maxDataLength = 1024;
-	SQLHSTMT odbc_statement = SQL_NULL_HSTMT;   // Handle for a statement
-	SQLHDBC odbc_conn = SQL_NULL_HDBC;
-	SQLHENV odbc_env = SQL_NULL_HENV;
+	_cleanup_hstmt_ SQLHSTMT odbc_statement = SQL_NULL_HSTMT;   // Handle for a statement
+	_cleanup_hdbc_  SQLHDBC odbc_conn = SQL_NULL_HDBC;
+	_cleanup_henv_  SQLHENV odbc_env = SQL_NULL_HENV;
 	SQLSMALLINT num_columns;
 	SQLRETURN command_result;
 	if(!alloc_handles_env(&odbc_env, &odbc_conn)) goto cleanup;

@@ -163,6 +163,7 @@ static int parse_cmdline_options(void *data, const char *arg, int key, struct fu
 
 void init_configfile_list()
 {
+	//const char * configfile_list[] = {"/etc/ap_configfs.conf", "./ap_configfs.conf", NULL};
 	const char * configfile_list[] = CONFIGFILES;
 	for(int i = 0; configfile_list[i] != NULL; i++)
 	{
@@ -197,8 +198,8 @@ int main(int argc, char *argv[])
 	if(cparams.dsn != NULL) reassign_cstr(&dsn, cparams.dsn);
 	if(cparams.query != NULL) reassign_cstr(&query, cparams.query);
 	if(cparams.update_intervall != -1) update_intervall = cparams.update_intervall;
-	if(strcmp(configfile, "")) parse_configfile(configfile);
 	if(mountpoint != NULL) fuse_opt_add_arg(&args, mountpoint);
+	if(strcmp(configfile, "")) parse_configfile(configfile);
 	if(cparams.print_config)
 	{
 		printf("Configfile: %s\ndsn: %s\nquery: %s\nconfigured mountpoint: %s\nupdate_intervall: %ld\n", configfile, dsn, query, mountpoint, update_intervall);
