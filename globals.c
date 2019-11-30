@@ -2,8 +2,8 @@
 
 char configfile[PATH_MAX];
 char * result_string = NULL;
-time_t last_update = 0;
-time_t update_intervall = 30;
+volatile time_t last_update = 0;
+volatile time_t update_intervall = 30;
 char * query = NULL;
 char * dsn = NULL;
 char * mountpoint = NULL;
@@ -72,10 +72,12 @@ void parse_configfile(const char * configfile)
 				if(!strcmp(key, "dsn") && dsn == NULL) reassign_cstr(&dsn, value);
 				if(!strcmp(key, "query") && query == NULL) reassign_cstr(&query, value);
 				if(!strcmp(key, "update_intervall") && value != NULL) update_intervall = atoi(value);
+				if(!strcmp(key, "mountpoint") && value != NULL) reassign_cstr(&mountpoint, value);
 			}
-			free(line);
+			free_cstr(&line);
 			line = NULL;
 		}
+		free_cstr(&line);
 		fclose(f);
 	} else {
 		fprintf(stderr, "Config file %s not found!\n", configfile);

@@ -2,7 +2,7 @@
 Get apache http server config parts from database. These parts are either given as fuse filesystem, mmap'd file or dumped to file.
 
 ## Info for autotools
-[https://thoughtbot.com/blog/the-magic-behind-configure-make-make-install](https://thoughtbot.com/blog/the-magic-behind-configure-make-make-install)
+ * [https://thoughtbot.com/blog/the-magic-behind-configure-make-make-install](https://thoughtbot.com/blog/the-magic-behind-configure-make-make-install)
 
 ## Tutorials which help with unixodbc
  * [http://www.unixodbc.org/doc/ProgrammerManual/Tutorial/resul.html](http://www.unixodbc.org/doc/ProgrammerManual/Tutorial/resul.html)
@@ -12,6 +12,9 @@ Get apache http server config parts from database. These parts are either given 
 
 ## Info for fuse
  * [https://github.com/libfuse/libfuse/wiki/Option-Parsing](https://github.com/libfuse/libfuse/wiki/Option-Parsing)
+ 
+## Info for Multithreading
+ * [http://www.cs.kent.edu/~ruttan/sysprog/lectures/multi-thread/multi-thread.html](http://www.cs.kent.edu/~ruttan/sysprog/lectures/multi-thread/multi-thread.html)
 
 ## Required Libraries
  * unixodbc

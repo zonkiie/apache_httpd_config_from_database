@@ -7,12 +7,37 @@
 #include <fuse.h>
 #include <includes.h>
 
+// To avoid a memory leak from fuse args, we define this macro
+#define _cleanup_fuse_args_ __attribute((cleanup(free_fuse_args)))
+
+pthread_mutex_t a_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+void init_configfile_list();
+
+void free_fuse_args(struct fuse_args *args)
+{
+	fuse_opt_free_args(args);
+}
+
 void cleanup()
 {
 	free_cstr(&result_string);
 	free_cstr(&dsn);
 	free_cstr(&query);
 	free_cstr(&mountpoint);
+}
+
+void signalhandler(int sig)
+{
+	if(sig == SIGHUP)
+	{
+		init_configfile_list();
+		if(strcmp(configfile, "")) parse_configfile(configfile);
+	}
+	if(sig == SIGTERM)
+	{
+		cleanup();
+	}
 }
 
 /*static int null_getattr(const char *path, struct stat *stbuf,
@@ -51,6 +76,7 @@ static int null_read(const char *path, char *buf, size_t size,
 	(void) buf;
 	(void) offset;
 	(void) fi;
+	size_t len = 0;
 
 	if(strcmp(path, "/") != 0)
 		return -ENOENT;
@@ -59,15 +85,22 @@ static int null_read(const char *path, char *buf, size_t size,
 // 		return 0;
 
 	memset(buf, 0, size);
-	//strcpy(buf, "Bla");
+	strcpy(buf, "");
 	time_t current_time = time(NULL);
-	if(current_time - last_update > update_intervall)
+	if(last_update == 0 || current_time - last_update > update_intervall)
 	{
-		last_update = current_time;
+		int rc;
+		//rc = pthread_mutex_lock(&a_mutex);
+		while((rc = pthread_mutex_trylock(&a_mutex)) == EBUSY) sleep(1);
 		free_cstr(&result_string);
 		exec_odbc_query(&result_string, dsn, query);
+		len = strlen(result_string);
+		last_update = current_time;
+		rc = pthread_mutex_unlock(&a_mutex);
 	}
-	strcpy(buf, result_string + offset);
+// 	fprintf(stderr, "Result string: %s, Offset: %ld, Size: %ld\n", result_string, offset, size);
+	if(offset > len) return 0;
+	if(result_string != NULL && result_string + offset != NULL) strcpy(buf, result_string + offset);
 	return strlen(buf);
 	//return size;
 }
@@ -91,6 +124,8 @@ struct params {
      char *configfile;
      char *query;
      char *dsn;
+	 int print_config;
+	 int update_intervall;
 };
 
 enum {
@@ -104,6 +139,8 @@ static struct fuse_opt ap_configfs_opts[] = {
 	PARAMS_OPT("--configfile %s", configfile, 0),
 	PARAMS_OPT("--dsn %s", dsn, 0),
 	PARAMS_OPT("--query %s", query, 0),
+	PARAMS_OPT("--print_config", print_config, 1),
+	PARAMS_OPT("--update_intervall %d", update_intervall, 0),
 	FUSE_OPT_KEY("-h",             KEY_HELP),
 	FUSE_OPT_KEY("--help",         KEY_HELP),
 	FUSE_OPT_END
@@ -118,6 +155,7 @@ static int parse_cmdline_options(void *data, const char *arg, int key, struct fu
 			help();
 			fuse_opt_add_arg(outargs, "-h");
 			fuse_main(outargs->argc, outargs->argv, &null_oper, NULL);
+			free_fuse_args(outargs);
 			exit(0);
 	}
 	return 1;
@@ -142,22 +180,29 @@ void init_configfile_list()
  */
 int main(int argc, char *argv[])
 {
+	signal(SIGHUP, signalhandler);
+	signal(SIGTERM, signalhandler);
 	struct params cparams;
 
     memset(&cparams, 0, sizeof(cparams));
+	cparams.update_intervall = -1;
 	strcpy(configfile, "");
 	init_configfile_list();
-	//_cleanup_cstr_ char * vhostlist = NULL;
 
 	atexit(cleanup);
-	//return fuse_main(argc, argv, &null_oper, NULL);
-	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
+	_cleanup_fuse_args_ struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 
 	fuse_opt_parse(&args, &cparams, ap_configfs_opts, parse_cmdline_options);
 	if(cparams.configfile != NULL) strcpy(configfile, cparams.configfile);
 	if(cparams.dsn != NULL) reassign_cstr(&dsn, cparams.dsn);
 	if(cparams.query != NULL) reassign_cstr(&query, cparams.query);
+	if(cparams.update_intervall != -1) update_intervall = cparams.update_intervall;
 	if(mountpoint != NULL) fuse_opt_add_arg(&args, mountpoint);
 	if(strcmp(configfile, "")) parse_configfile(configfile);
+	if(cparams.print_config)
+	{
+		printf("Configfile: %s\ndsn: %s\nquery: %s\nconfigured mountpoint: %s\nupdate_intervall: %ld\n", configfile, dsn, query, mountpoint, update_intervall);
+		return 0;
+	}
 	return fuse_main(args.argc, args.argv, &null_oper, NULL);
 }

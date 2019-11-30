@@ -3,8 +3,8 @@
 
 extern char configfile[PATH_MAX];
 extern char * result_string;
-extern time_t last_update;
-extern time_t update_intervall;
+extern volatile time_t last_update;
+extern volatile time_t update_intervall;
 extern char * query;
 extern char * dsn;
 extern char * mountpoint;

@@ -12,6 +12,9 @@
 #include <stdbool.h>
 #include <getopt.h>
 #include <stddef.h>
+#include <signal.h>
+#include <threads.h>
+#include <pthread.h>
 #include <linux/limits.h>
 
 #include <globals.h>

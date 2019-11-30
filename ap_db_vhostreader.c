@@ -30,10 +30,10 @@ cleanup:
 	free_henv(&odbc_env);
 }
 
-void exec_odbc_query(char ** result_string, const char * datasource, const char * query)
+void exec_odbc_query(char ** rstring, const char * datasource, const char * query)
 {
 	size_t size = 0;
-	_autoclose_fstream_ FILE *stream = open_memstream (result_string, &size);
+	_autoclose_fstream_ FILE *stream = open_memstream (rstring, &size);
 	const int maxDataLength = 1024;
 	SQLHSTMT odbc_statement = SQL_NULL_HSTMT;   // Handle for a statement
 	SQLHDBC odbc_conn = SQL_NULL_HDBC;
