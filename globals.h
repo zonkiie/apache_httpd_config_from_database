@@ -18,6 +18,6 @@ void free_carr(char ***carr);
 void free_fstream(FILE ** stream);
 void reassign_cstr(char **str, const char * value);
 int parse_configstring(const char * line, char * key, char * value);
-void parse_configfile(const char * configfile);
+bool parse_configfile_callback(const char * configfile, void(*handle_function)(const char * key, const char * value));
 
 #endif

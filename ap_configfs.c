@@ -27,12 +27,20 @@ void cleanup()
 	free_cstr(&mountpoint);
 }
 
+void handle_configfile_entries(const char * key, const char * value)
+{
+	if(!strcmp(key, "dsn") && dsn == NULL) reassign_cstr(&dsn, value);
+	if(!strcmp(key, "query") && query == NULL) reassign_cstr(&query, value);
+	if(!strcmp(key, "update_intervall") && value != NULL) update_intervall = atoi(value);
+	if(!strcmp(key, "mountpoint") && value != NULL) reassign_cstr(&mountpoint, value);
+}
+
 void signalhandler(int sig)
 {
 	if(sig == SIGHUP)
 	{
 		init_configfile_list();
-		if(strcmp(configfile, "")) parse_configfile(configfile);
+		if(strcmp(configfile, "")) parse_configfile_callback(configfile, handle_configfile_entries);
 	}
 	if(sig == SIGTERM)
 	{
@@ -42,7 +50,7 @@ void signalhandler(int sig)
 
 /*static int null_getattr(const char *path, struct stat *stbuf,
 			struct fuse_file_info *fi)*/
-static int null_getattr(const char *path, struct stat *stbuf)
+static int apconfigfs_getattr(const char *path, struct stat *stbuf)
 {
 	//(void) fi;
 
@@ -60,7 +68,7 @@ static int null_getattr(const char *path, struct stat *stbuf)
 	return 0;
 }
 
-static int null_open(const char *path, struct fuse_file_info *fi)
+static int apconfigfs_open(const char *path, struct fuse_file_info *fi)
 {
 	(void) fi;
 
@@ -70,7 +78,7 @@ static int null_open(const char *path, struct fuse_file_info *fi)
 	return 0;
 }
 
-static int null_read(const char *path, char *buf, size_t size,
+static int apconfigfs_read(const char *path, char *buf, size_t size,
 		     off_t offset, struct fuse_file_info *fi)
 {
 	(void) buf;
@@ -106,9 +114,9 @@ static int null_read(const char *path, char *buf, size_t size,
 }
 
 static struct fuse_operations null_oper = {
-	.getattr	= null_getattr,
-	.open		= null_open,
-	.read		= null_read,
+	.getattr	= apconfigfs_getattr,
+	.open		= apconfigfs_open,
+	.read		= apconfigfs_read,
 };
 
 static void help()
@@ -197,7 +205,7 @@ int main(int argc, char *argv[])
 	if(cparams.dsn != NULL) reassign_cstr(&dsn, cparams.dsn);
 	if(cparams.query != NULL) reassign_cstr(&query, cparams.query);
 	if(cparams.update_intervall != -1) update_intervall = cparams.update_intervall;
-	if(strcmp(configfile, "")) parse_configfile(configfile);
+	if(strcmp(configfile, "")) parse_configfile_callback(configfile, handle_configfile_entries);
 	if(mountpoint != NULL) fuse_opt_add_arg(&args, mountpoint);
 	if(cparams.print_config)
 	{
