@@ -16,6 +16,7 @@ extern char *optarg;
 void free_cstr(char ** str);
 void free_carr(char ***carr);
 void free_fstream(FILE ** stream);
+int mmapwrite(const char *filename, const char * content);
 void reassign_cstr(char **str, const char * value);
 int parse_configstring(const char * line, char * key, char * value);
 bool parse_configfile_callback(const char * configfile, void(*handle_function)(const char * key, const char * value));
