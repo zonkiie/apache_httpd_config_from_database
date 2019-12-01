@@ -16,6 +16,9 @@ Get apache http server config parts from database. These parts are either given 
 ## Info for Multithreading
  * [http://www.cs.kent.edu/~ruttan/sysprog/lectures/multi-thread/multi-thread.html](http://www.cs.kent.edu/~ruttan/sysprog/lectures/multi-thread/multi-thread.html)
 
+## Apache Modules with dynamic vhosts
+ * [https://sourceforge.net/projects/dbd-modules/](https://sourceforge.net/projects/dbd-modules/), [https://github.com/joneschrisan/dbd-modules](https://github.com/joneschrisan/dbd-modules)
+
 ## Required Libraries
  * unixodbc
  * unixodbc-dev
