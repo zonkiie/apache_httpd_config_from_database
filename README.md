@@ -33,6 +33,7 @@ Get apache http server config parts from database. These parts are either given 
  * Build
     make
 
-## Example for configfile 
+## Example for configfile (/etc/ap_configfs.conf, ./ap_configfs.conf)
     dsn=Driver=SQLITE3;Database=/tmp/testdb.sqlite
     query=select 'Use Vhost example example.com /home/example.com' as entry union select 'Use VHost example2 example2.com /home/example2.com' as entry union select 'Use Redirect example3 example3.com https://www.google.de' as entry;
+    mountpoint=my_mountpoint
