@@ -1,11 +1,12 @@
 AUTOMAKE_OPTIONS = foreign
-bin_PROGRAMS = ap_config ap_configfs ap_config_mod
+bin_PROGRAMS = ap_config ap_configfs ap_config_mod.so
 noinst_LIBRARIES = lib_apache_config.a
 lib_apache_config_a_SOURCES = ap_db_vhostreader.c odbc_functions.c globals.c
-ap_config_mod_SOURCES = ap_config_mod.c
-ap_config_mod_LDADD = lib_apache_config.a
-ap_config_mod_LDFLAGS = 
-ap_config_mod_CFLAGS = -I/usr/include/apr-1.0/ -I/usr/include/apache2/
+#ap_config_mod_so_SOURCES = ap_config_mod.c
+#ap_config_mod_so_LDADD = lib_apache_config.a
+#ap_config_mod_so_LDFLAGS = 
+#ap_config_mod_so_CFLAGS = -I/usr/include/apr-1.0/ -I/usr/include/apache2/ -I.
+ap_config_mod_so_COMPILE = apxs -I. -a -c ap_config_mod.c
 ap_config_SOURCES = ap_config.c
 ap_config_LDADD = lib_apache_config.a
 ap_config_LDFLAGS = 

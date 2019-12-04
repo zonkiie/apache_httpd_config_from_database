@@ -30,9 +30,9 @@ AP_DECLARE_MODULE(mod_ap_config) = {
         NULL,                   /* merge per-directory config structures */
         NULL,                   /* create per-server config structure */
         NULL,                   /* merge per-server config structures */
-        mod_cmds,             /* configuration commands */
+        mod_cmds,               /* configuration commands */
         NULL                    /* register hooks */
 };
 
 // To be removed...
-int main(){}
+//int main(){}
