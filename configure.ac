@@ -1,5 +1,6 @@
 AC_INIT([ap_db_config], [0.1], [zonkiie])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
+#LT_INIT
 AC_PROG_CC
 AC_PROG_RANLIB
 AC_HAVE_LIBRARY(odbc)
