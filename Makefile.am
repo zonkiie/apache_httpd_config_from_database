@@ -19,5 +19,5 @@ CLEANFILES = *.so *.la *.lo *.slo
 # install-exec-local: ap_config_mod.c
 # 	apxs -I. -a -c $^
 all-local: ap_config_mod.so
-ap_config_mod.so: ap_config_mod.c
+ap_config_mod.so: ap_config_mod.c lib_apache_config.a
 	apxs -I. -a -c -o $@ $^
