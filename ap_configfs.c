@@ -113,7 +113,7 @@ static int apconfigfs_read(const char *path, char *buf, size_t size,
 	//return size;
 }
 
-static struct fuse_operations null_oper = {
+static struct fuse_operations apconfigfs_oper = {
 	.getattr	= apconfigfs_getattr,
 	.open		= apconfigfs_open,
 	.read		= apconfigfs_read,
@@ -162,7 +162,7 @@ static int parse_cmdline_options(void *data, const char *arg, int key, struct fu
 		case KEY_HELP:
 			help();
 			fuse_opt_add_arg(outargs, "-h");
-			fuse_main(outargs->argc, outargs->argv, &null_oper, NULL);
+			fuse_main(outargs->argc, outargs->argv, &apconfigfs_oper, NULL);
 			free_fuse_args(outargs);
 			exit(0);
 	}
@@ -212,5 +212,5 @@ int main(int argc, char *argv[])
 		printf("Configfile: %s\ndsn: %s\nquery: %s\nconfigured mountpoint: %s\nupdate_intervall: %ld\n", configfile, dsn, query, mountpoint, update_intervall);
 		return 0;
 	}
-	return fuse_main(args.argc, args.argv, &null_oper, NULL);
+	return fuse_main(args.argc, args.argv, &apconfigfs_oper, NULL);
 }
