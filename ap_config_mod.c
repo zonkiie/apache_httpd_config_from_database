@@ -23,6 +23,17 @@ typedef struct
     char *location;                /* of command definition, for error messages */
 } ap_command_t;
 
+typedef struct
+{
+    int index;                    /* current element */
+    int char_index;               /* current char in element */
+    int length;                   /* cached length of the current line */
+    apr_array_header_t *contents; /* array of char * */
+    ap_configfile_t *next;        /* next config once this one is processed */
+    ap_configfile_t **upper;      /* hack: where to update it if needed */
+} array_contents_t;
+
+
 static apr_hash_t *ap_commands = NULL;
 
 #define empty_string_p(p) (!(p) || *(p) == '\0')
@@ -46,6 +57,101 @@ static apr_array_header_t *get_arguments(apr_pool_t * pool, const char *line)
 
     return args;
 }
+
+/*
+  Get next config if any.
+  this may be called several times if there are continuations.
+*/
+static int next_one(array_contents_t * ml)
+{
+    if (ml->next) {
+        ap_assert(ml->upper);
+        *(ml->upper) = ml->next;
+        return 1;
+    }
+    return 0;
+}
+
+/*
+  returns next char if possible
+  this may involve switching to enclosing config.
+*/
+static apr_status_t array_getch(char *ch, void *param)
+{
+    array_contents_t *ml = (array_contents_t *) param;
+    char **tab = (char **) ml->contents->elts;
+
+    while (ml->char_index >= ml->length) {
+        if (ml->index >= ml->contents->nelts) {
+            /* maybe update */
+            if (ml->next && ml->next->getch && next_one(ml)) {
+                apr_status_t rc = ml->next->getch(ch, ml->next->param);
+                if (*ch==LF)
+                    ml->next->line_number++;
+                return rc;
+            }
+            return APR_EOF;
+        }
+        ml->index++;
+        ml->char_index = 0;
+        ml->length = ml->index >= ml->contents->nelts ?
+            0 : strlen(tab[ml->index]);
+    }
+
+    *ch = tab[ml->index][ml->char_index++];
+    return APR_SUCCESS;
+}
+
+/*
+  returns a buf a la fgets.
+  no more than a line at a time, otherwise the parsing is too much ahead...
+  NULL at EOF.
+*/
+static apr_status_t array_getstr(void *buf, size_t bufsize, void *param)
+{
+    array_contents_t *ml = (array_contents_t *) param;
+    char *buffer = (char *) buf;
+    char next = '\0';
+    size_t i = 0;
+    apr_status_t rc = APR_SUCCESS;
+
+    /* read chars from stream, stop on newline */
+    while (i < bufsize - 1 && next != LF &&
+           ((rc = array_getch(&next, param)) == APR_SUCCESS)) {
+        buffer[i++] = next;
+    }
+
+    if (rc == APR_EOF) {
+        /* maybe update to next, possibly a recursion */
+        if (next_one(ml)) {
+            ap_assert(ml->next->getstr);
+            /* keep next line count in sync! the caller will update
+               the current line_number, we need to forward to the next */
+            ml->next->line_number++;
+            return ml->next->getstr(buf, bufsize, ml->next->param);
+        }
+        /* else that is really all we can do */
+        return APR_EOF;
+    }
+
+    buffer[i] = '\0';
+
+    return APR_SUCCESS;
+}
+
+/*
+  close the array stream?
+*/
+static apr_status_t array_close(void *param)
+{
+    array_contents_t *ml = (array_contents_t *) param;
+    /* move index at end of stream... */
+    ml->index = ml->contents->nelts;
+    ml->char_index = ml->length;
+    return APR_SUCCESS;
+}
+
+
 
 /*
   warn if anything non blank appears, but ignore comments...
@@ -258,8 +364,7 @@ static ap_configfile_t *make_array_config(apr_pool_t * pool,
     ls->next = cfg;
     ls->upper = upper;
 
-    return ap_pcfg_open_custom(pool, where, (void *) ls,
-                               array_getch, array_getstr, array_close);
+    return ap_pcfg_open_custom(pool, where, (void *) ls, array_getch, array_getstr, array_close);
 }
 
 static const char *exec_cmd(cmd_parms * cmd, void *dummy, const char *arg)
@@ -269,17 +374,14 @@ static const char *exec_cmd(cmd_parms * cmd, void *dummy, const char *arg)
 	ap_command_t * command;
     apr_array_header_t *replacements;
     apr_array_header_t *contents;
-    where = apr_psprintf(cmd->temp_pool,
-                         "command '%s' (%s) used on line %d of \"%s\"",
-                         command->name, command->location,
-                         cmd->config_file->line_number,
-                         cmd->config_file->name);
+    where = apr_psprintf(cmd->temp_pool, "command '%s' (%s) used on line %d of \"%s\"", command->name, command->location, cmd->config_file->line_number, cmd->config_file->name);
+	
+	
 	
 	/* the current "config file" is replaced by a string array...
        at the end of processing the array, the initial config file
        will be returned there (see next_one) so as to go on. */
-    cmd->config_file = make_array_config(cmd->temp_pool, contents, where,
-                                         cmd->config_file, &cmd->config_file);
+    cmd->config_file = make_array_config(cmd->temp_pool, contents, where, cmd->config_file, &cmd->config_file);
 	return NULL;
 }
 
