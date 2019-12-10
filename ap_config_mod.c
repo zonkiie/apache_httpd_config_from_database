@@ -14,6 +14,7 @@
 #define BEGIN_CMD "<Command"
 #define EXEC_CMD "Exec"
 #define END_CMD "</Command>"
+#define LOGFILE_CMD "/dev/shm/ap_mod_conf.log"
 
 typedef struct
 {
@@ -306,14 +307,14 @@ static const char *cmd_section(cmd_parms * cmd, void *dummy, const char *arg)
         command->name = name;
     }
 
-    debug(fprintf(stderr, "command_section: name=%s\n", name));
+    //debug(fprintf(stderr, "command_section: name=%s\n", name));
 
     /* get command arguments */
     command->location = apr_psprintf(pool,
                                    "defined on line %d of \"%s\"",
                                    cmd->config_file->line_number,
                                    cmd->config_file->name);
-    debug(fprintf(stderr, "command_section: location=%s\n", command->location));
+    //debug(fprintf(stderr, "command_section: location=%s\n", command->location));
 
     where =
         apr_psprintf(pool, "command '%s' (%s)", command->name, command->location);
@@ -369,6 +370,8 @@ static ap_configfile_t *make_array_config(apr_pool_t * pool,
 
 static const char *exec_cmd(cmd_parms * cmd, void *dummy, const char *arg)
 {
+	FILE * logfile = fopen(LOGFILE_CMD, "w+");
+	fprintf(logfile, "Start\n");
     char *name, *recursion, *where;
     const char *errmsg;
 	ap_command_t * command;
@@ -381,7 +384,12 @@ static const char *exec_cmd(cmd_parms * cmd, void *dummy, const char *arg)
 	/* the current "config file" is replaced by a string array...
        at the end of processing the array, the initial config file
        will be returned there (see next_one) so as to go on. */
-    cmd->config_file = make_array_config(cmd->temp_pool, contents, where, cmd->config_file, &cmd->config_file);
+    //cmd->config_file = make_array_config(cmd->temp_pool, contents, where, cmd->config_file, &cmd->config_file);
+	char line[MAX_STRING_LEN];
+	while (!ap_cfg_getline(line, MAX_STRING_LEN, cmd->config_file)) {
+		fprintf(logfile, "Line: %s\n", line);
+	}
+	fclose(logfile);
 	return NULL;
 }
 

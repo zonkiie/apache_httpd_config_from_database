@@ -32,6 +32,18 @@ Get apache http server config parts from database. These parts are either given 
     ./configure
  * Build
     make
+    
+## Command Line to compile and install module and restart apache
+    sudo apxs -I. -a -i -c ap_config_mod.c lib_apache_config.a; sudo systemctl restart apache2
+
+## Example apache config file /etc/apache2/mods-available/mod_ap_config.conf - only to see if arg parsing works - will be changed later
+    <IfModule ap_config_mod.c>
+    <Command load_vhosts>
+    Exec "/usr/sbin/ls"
+    </Command>
+    </IfModule>
+
+    
 
 ## Example for configfile (/etc/ap_configfs.conf, ./ap_configfs.conf)
     dsn=Driver=SQLITE3;Database=/tmp/testdb.sqlite
