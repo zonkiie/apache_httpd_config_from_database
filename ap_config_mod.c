@@ -12,7 +12,7 @@
 #include "apr_hash.h"
 
 #define BEGIN_CMD "<Command"
-#define EXEC_CMD "Exec"
+#define EXEC_CMD "ExecuteCommand"
 #define END_CMD "</Command>"
 #define LOGFILE_CMD "/dev/shm/ap_mod_conf.log"
 
@@ -372,29 +372,36 @@ static const char *exec_cmd(cmd_parms * cmd, void *dummy, const char *arg)
 {
 	FILE * logfile = fopen(LOGFILE_CMD, "w+");
 	fprintf(logfile, "Start\n");
-    char *name, *recursion, *where;
+	fflush(logfile);
+    char *execute_command, *recursion, *where;
     const char *errmsg;
 	ap_command_t * command;
     apr_array_header_t *replacements;
     apr_array_header_t *contents;
-    where = apr_psprintf(cmd->temp_pool, "command '%s' (%s) used on line %d of \"%s\"", command->name, command->location, cmd->config_file->line_number, cmd->config_file->name);
+	if((execute_command = ap_getword_conf(cmd->temp_pool, &arg)) == NULL) return "No command given.";
+	fprintf(logfile, "execute_command: %s\n", execute_command);
+	fflush(logfile);
 	
+	where = apr_psprintf(cmd->temp_pool, "File '%s' (%d)", cmd->config_file->name, cmd->config_file->line_number);
 	
-	
+	contents = apr_array_make(cmd->temp_pool, 1, sizeof(char *));
+	char **new = apr_array_push(contents);
+	*new = apr_pstrdup(cmd->temp_pool, "LogLevel Debug\n<Test>\nTest\n</Test>\n");
+
 	/* the current "config file" is replaced by a string array...
        at the end of processing the array, the initial config file
        will be returned there (see next_one) so as to go on. */
-    //cmd->config_file = make_array_config(cmd->temp_pool, contents, where, cmd->config_file, &cmd->config_file);
+    cmd->config_file = make_array_config(cmd->temp_pool, contents, where, cmd->config_file, &cmd->config_file);
 	char line[MAX_STRING_LEN];
 	while (!ap_cfg_getline(line, MAX_STRING_LEN, cmd->config_file)) {
-		fprintf(logfile, "Line: %s\n", line);
+		fprintf(logfile, "Line: %s in nr %d\n", line, cmd->config_file->line_number);
 	}
 	fclose(logfile);
 	return NULL;
 }
 
 static const command_rec mod_cmds[] = {
-	AP_INIT_RAW_ARGS(BEGIN_CMD, cmd_section, NULL, EXEC_ON_READ | OR_ALL, "Beginning of a cmd definition section."),
+// 	AP_INIT_RAW_ARGS(BEGIN_CMD, cmd_section, NULL, EXEC_ON_READ | OR_ALL, "Beginning of a cmd definition section."),
     AP_INIT_RAW_ARGS(EXEC_CMD, exec_cmd, NULL, EXEC_ON_READ | OR_ALL, "Use of a command."),
 	{NULL}
 };
