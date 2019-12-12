@@ -1,5 +1,7 @@
 # apache_httpd_config_from_database
-Get apache http server config parts from database. These parts are either given as fuse filesystem, mmap'd file or dumped to file.
+Get apache http server config parts from database. These parts are either given as fuse filesystem, mmap'd file or dumped to file. Additionally, an apache module can be used.
+# Warning
+If using the apache module, you should know what you are doing!
 
 ## Info for autotools
  * [https://thoughtbot.com/blog/the-magic-behind-configure-make-make-install](https://thoughtbot.com/blog/the-magic-behind-configure-make-make-install)
@@ -21,6 +23,7 @@ Get apache http server config parts from database. These parts are either given 
 
 ## Reading file content
   * [https://stackoverflow.com/questions/174531/how-to-read-the-content-of-a-file-to-a-string-in-c](https://stackoverflow.com/questions/174531/how-to-read-the-content-of-a-file-to-a-string-in-c)
+
 ## Required Libraries
  * unixodbc
  * unixodbc-dev
