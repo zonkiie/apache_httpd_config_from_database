@@ -370,33 +370,34 @@ static ap_configfile_t *make_array_config(apr_pool_t * pool,
 
 static const char *exec_cmd(cmd_parms * cmd, void *dummy, const char *arg)
 {
-	FILE * logfile = fopen(LOGFILE_CMD, "w+");
-	fprintf(logfile, "Start\n");
-	fflush(logfile);
     char *execute_command, *recursion, *where;
     const char *errmsg;
 	ap_command_t * command;
     apr_array_header_t *replacements;
     apr_array_header_t *contents;
 	if((execute_command = ap_getword_conf(cmd->temp_pool, &arg)) == NULL) return "No command given.";
-	fprintf(logfile, "execute_command: %s\n", execute_command);
-	fflush(logfile);
 	
 	where = apr_psprintf(cmd->temp_pool, "File '%s' (%d)", cmd->config_file->name, cmd->config_file->line_number);
 	
+	FILE* resultfp = popen(execute_command, "r");
+	
+	char* command_result = NULL;
+	size_t command_result_len;
+	ssize_t bytes_read = getdelim( &command_result, &command_result_len, '\0', resultfp);
+	if ( bytes_read == -1) {
+		return "Could not read command.";
+	}
+	fclose(resultfp);
+	
 	contents = apr_array_make(cmd->temp_pool, 1, sizeof(char *));
 	char **new = apr_array_push(contents);
-	*new = apr_pstrdup(cmd->temp_pool, "LogLevel Debug\n<Test>\nTest\n</Test>\n");
+	*new = apr_pstrdup(cmd->temp_pool, command_result);
+	free(command_result);
 
 	/* the current "config file" is replaced by a string array...
        at the end of processing the array, the initial config file
        will be returned there (see next_one) so as to go on. */
     cmd->config_file = make_array_config(cmd->temp_pool, contents, where, cmd->config_file, &cmd->config_file);
-	char line[MAX_STRING_LEN];
-	while (!ap_cfg_getline(line, MAX_STRING_LEN, cmd->config_file)) {
-		fprintf(logfile, "Line: %s in nr %d\n", line, cmd->config_file->line_number);
-	}
-	fclose(logfile);
 	return NULL;
 }
 

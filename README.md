@@ -19,6 +19,8 @@ Get apache http server config parts from database. These parts are either given 
 ## Apache Modules with dynamic vhosts
  * [https://sourceforge.net/projects/dbd-modules/](https://sourceforge.net/projects/dbd-modules/), [https://github.com/joneschrisan/dbd-modules](https://github.com/joneschrisan/dbd-modules)
 
+## Reading file content
+  * [https://stackoverflow.com/questions/174531/how-to-read-the-content-of-a-file-to-a-string-in-c](https://stackoverflow.com/questions/174531/how-to-read-the-content-of-a-file-to-a-string-in-c)
 ## Required Libraries
  * unixodbc
  * unixodbc-dev
