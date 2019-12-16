@@ -401,9 +401,22 @@ static const char *exec_cmd(cmd_parms * cmd, void *dummy, const char *arg)
 	return NULL;
 }
 
+// In Configfile you can give these args:
+// GetArgs "Arg 1" "Arg 2" "Arg 3" Arg4
+/*static const char *get_args(cmd_parms *cmd, void *dc, int argc, char *const argv[])
+{
+	FILE *logfile = fopen(LOGFILE_CMD, "w+");
+	for(int i = 0; i < argc; i++)
+	{
+		fprintf(logfile, "Arg %d: %s\n", i, argv[i]);
+	}
+	fclose(logfile);
+}*/
+
 static const command_rec mod_cmds[] = {
 // 	AP_INIT_RAW_ARGS(BEGIN_CMD, cmd_section, NULL, EXEC_ON_READ | OR_ALL, "Beginning of a cmd definition section."),
     AP_INIT_RAW_ARGS(EXEC_CMD, exec_cmd, NULL, EXEC_ON_READ | OR_ALL, "Use of a command."),
+//	AP_INIT_TAKE_ARGV("GetArgs", get_args, NULL, EXEC_ON_READ | OR_ALL, "Test for parsing args."),
 	{NULL}
 };
 
