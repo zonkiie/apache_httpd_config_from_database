@@ -401,6 +401,18 @@ static const char *exec_cmd(cmd_parms * cmd, void *dummy, const char *arg)
 	return NULL;
 }
 
+/// server_rec, 
+/// @see mod_vhost_alias.c:
+
+static void * create_server_config(apr_pool_t *p, server_rec *s)
+{
+	
+}
+
+static void * merge_server_config(apr_pool_t *p, void *parentv, void *childv)
+{
+}
+
 // In Configfile you can give these args:
 // GetArgs "Arg 1" "Arg 2" "Arg 3" Arg4
 /*static const char *get_args(cmd_parms *cmd, void *dc, int argc, char *const argv[])
