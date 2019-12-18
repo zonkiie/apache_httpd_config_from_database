@@ -401,16 +401,38 @@ static const char *exec_cmd(cmd_parms * cmd, void *dummy, const char *arg)
 	return NULL;
 }
 
+// Here the live config of apache starts
+// Lets try it...
+
+typedef struct {
+	const char * servername;
+	apr_array_header_t * serveraliases;
+	int vhost_type;
+	const char * target;
+	const char * ssl_pem_file;
+	const char * ssl_crt_file;
+	server_rec * server;
+} ap_config_server;
+
 /// server_rec, 
 /// @see mod_vhost_alias.c:
 
 static void * create_server_config(apr_pool_t *p, server_rec *s)
 {
+	FILE *logfile = fopen(LOGFILE_CMD, "w+");
+	fprintf(logfile, "%s\n", __FUNCTION__);
+	fclose(logfile);
 	
+	return NULL;
 }
 
+// The vhosts should only be appended, not replaced.
 static void * merge_server_config(apr_pool_t *p, void *parentv, void *childv)
 {
+	FILE *logfile = fopen(LOGFILE_CMD, "w+");
+	fprintf(logfile, "%s\n", __FUNCTION__);
+	fclose(logfile);
+	return NULL;
 }
 
 // In Configfile you can give these args:
@@ -437,8 +459,8 @@ AP_DECLARE_MODULE(mod_ap_config) = {
     STANDARD20_MODULE_STUFF,    /* common stuff */
         NULL,                   /* create per-directory config */
         NULL,                   /* merge per-directory config structures */
-        NULL,                   /* create per-server config structure */
-        NULL,                   /* merge per-server config structures */
+        create_server_config,                   /* create per-server config structure */
+        merge_server_config,                   /* merge per-server config structures */
         mod_cmds,               /* configuration commands */
         NULL                    /* register hooks */
 };
