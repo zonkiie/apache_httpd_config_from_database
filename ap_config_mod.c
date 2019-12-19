@@ -40,6 +40,8 @@ static apr_hash_t *ap_commands = NULL;
 #define empty_string_p(p) (!(p) || *(p) == '\0')
 #define trim(line) while (*(line) == ' ' || *(line) == '\t') (line)++
 
+#define debug_line { FILE *logfile = fopen(LOGFILE_CMD, "a+"); fprintf(logfile, "%s (line %d)\n", __FUNCTION__, __LINE__); fclose(logfile); }
+
 /*
   return configuration-parsed arguments from line as an array.
   the line is expected not to contain any '\n'?
@@ -419,8 +421,8 @@ typedef struct {
 
 static void * create_server_config(apr_pool_t *p, server_rec *s)
 {
-	FILE *logfile = fopen(LOGFILE_CMD, "w+");
-	fprintf(logfile, "%s\n", __FUNCTION__);
+	FILE *logfile = fopen(LOGFILE_CMD, "a+");
+	fprintf(logfile, "%s, Server rec name: %s\n", __FUNCTION__, s->context);
 	fclose(logfile);
 	
 	return NULL;
@@ -429,9 +431,7 @@ static void * create_server_config(apr_pool_t *p, server_rec *s)
 // The vhosts should only be appended, not replaced.
 static void * merge_server_config(apr_pool_t *p, void *parentv, void *childv)
 {
-	FILE *logfile = fopen(LOGFILE_CMD, "w+");
-	fprintf(logfile, "%s\n", __FUNCTION__);
-	fclose(logfile);
+	debug_line;
 	return NULL;
 }
 
@@ -454,6 +454,20 @@ static const command_rec mod_cmds[] = {
 	{NULL}
 };
 
+static int translate_path(request_rec *r)
+{
+	debug_line;
+	return DECLINED;
+}
+
+static void register_hooks(apr_pool_t *p)
+{
+    static const char * const aszPre[]={ "mod_macro.c",NULL };
+	debug_line;
+
+    //ap_hook_translate_name(translate_path, aszPre, NULL, APR_HOOK_MIDDLE);
+}
+
 
 AP_DECLARE_MODULE(mod_ap_config) = {
     STANDARD20_MODULE_STUFF,    /* common stuff */
@@ -462,7 +476,7 @@ AP_DECLARE_MODULE(mod_ap_config) = {
         create_server_config,                   /* create per-server config structure */
         merge_server_config,                   /* merge per-server config structures */
         mod_cmds,               /* configuration commands */
-        NULL                    /* register hooks */
+        register_hooks                    /* register hooks */
 };
 
 // To be removed...
