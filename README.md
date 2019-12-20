@@ -21,6 +21,9 @@ If using the apache module, you should know what you are doing!
 ## Apache Modules with dynamic vhosts
  * [https://sourceforge.net/projects/dbd-modules/](https://sourceforge.net/projects/dbd-modules/), [https://github.com/joneschrisan/dbd-modules](https://github.com/joneschrisan/dbd-modules)
 
+## Apache Module development
+ * [https://httpd.apache.org/docs/2.4/developer/](https://httpd.apache.org/docs/2.4/developer/)
+
 ## Reading file content
   * [https://stackoverflow.com/questions/174531/how-to-read-the-content-of-a-file-to-a-string-in-c](https://stackoverflow.com/questions/174531/how-to-read-the-content-of-a-file-to-a-string-in-c)
 
@@ -40,6 +43,8 @@ If using the apache module, you should know what you are doing!
     
 ## Command Line to compile and install module and restart apache
     sudo apxs -I. -a -i -c ap_config_mod.c lib_apache_config.a; sudo systemctl restart apache2
+or simply
+	make apmod
 
 ## Example apache config file /etc/apache2/mods-available/mod_ap_config.conf - only to see if arg parsing works - will be changed later
     <IfModule ap_config_mod.c>

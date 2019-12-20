@@ -464,7 +464,8 @@ static void register_hooks(apr_pool_t *p)
 {
     static const char * const aszPre[]={ "mod_macro.c",NULL };
 	debug_line;
-
+	
+	ap_hook_handler(translate_path, NULL, NULL, APR_HOOK_FIRST);
     //ap_hook_translate_name(translate_path, aszPre, NULL, APR_HOOK_MIDDLE);
 }
 
