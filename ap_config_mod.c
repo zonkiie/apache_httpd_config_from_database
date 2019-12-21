@@ -41,6 +41,7 @@ static apr_hash_t *ap_commands = NULL;
 #define trim(line) while (*(line) == ' ' || *(line) == '\t') (line)++
 
 #define debug_line { FILE *logfile = fopen(LOGFILE_CMD, "a+"); fprintf(logfile, "%s (line %d)\n", __FUNCTION__, __LINE__); fclose(logfile); }
+#define debug_printf(...) { FILE *logfile = fopen(LOGFILE_CMD, "a+"); fprintf(logfile, "%s (line %d): ", __FUNCTION__, __LINE__); fprintf(logfile, __VA_ARGS__);  fclose(logfile); }
 
 /*
   return configuration-parsed arguments from line as an array.
@@ -421,9 +422,7 @@ typedef struct {
 
 static void * create_server_config(apr_pool_t *p, server_rec *s)
 {
-	FILE *logfile = fopen(LOGFILE_CMD, "a+");
-	fprintf(logfile, "%s, Server rec name: %s\n", __FUNCTION__, s->context);
-	fclose(logfile);
+// 	debug_printf("Server rec name: %s\n", s->context);
 	
 	return NULL;
 }
@@ -431,7 +430,7 @@ static void * create_server_config(apr_pool_t *p, server_rec *s)
 // The vhosts should only be appended, not replaced.
 static void * merge_server_config(apr_pool_t *p, void *parentv, void *childv)
 {
-	debug_line;
+// 	debug_line;
 	return NULL;
 }
 
@@ -456,7 +455,7 @@ static const command_rec mod_cmds[] = {
 
 static int translate_path(request_rec *r)
 {
-	debug_line;
+// 	debug_printf("Server_Rec: %s\n", r->server->server_hostname);
 	return DECLINED;
 }
 
