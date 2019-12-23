@@ -52,6 +52,6 @@ Mkfile.old
 dkms.conf
 
 ap_configfs.conf
-mod_macro.c
-mod_rewrite.*
+
+not-my-modules/
 
