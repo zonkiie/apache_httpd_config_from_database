@@ -455,8 +455,20 @@ static const command_rec mod_cmds[] = {
 
 static int translate_path(request_rec *r)
 {
-	debug_printf("Server_Rec: %s\n", r->server->server_hostname);
-	return DECLINED;
+    int nelts = r->server->names->nelts;
+	debug_printf("Server_Rec: %s, Hostname: %s, nelts: %d\n", r->server->server_hostname, r->hostname, nelts);
+	debug_printf("Server Context: %s\n", r->server->context);
+	char * document_root = ap_context_document_root(r);
+	debug_printf("Document Root: %s\n", document_root);
+	//debug_printf("Server Module Config: %s\n", config[0]);
+    char **names = (char **) r->server->names->elts;
+    int i;
+
+    for (i = 0; i < nelts; i++) {
+		debug_printf("El %d: %s\n", i, names[i]);
+	}
+	//return DECLINED;
+	return OK;
 }
 
 static void register_hooks(apr_pool_t *p)
