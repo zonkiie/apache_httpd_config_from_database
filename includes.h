@@ -21,6 +21,7 @@
 #include <sys/mman.h>
 #include <linux/limits.h>
 
+#include <debug_macros.h>
 #include <globals.h>
 #include <ap_db_vhostreader.h>
 #include <odbc_functions.h>

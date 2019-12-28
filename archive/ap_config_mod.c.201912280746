@@ -13,7 +13,9 @@
 
 #include "mod_dbd.h"
 
+#define BEGIN_CMD "<Command"
 #define EXEC_CMD "ExecuteCommand"
+#define END_CMD "</Command>"
 #define LOGFILE_CMD "/dev/shm/ap_mod_conf.log"
 
 typedef struct
@@ -252,6 +254,97 @@ static char *get_lines_till_end_token(apr_pool_t * pool,
     return apr_psprintf(pool, "expected token not found: %s", end_token);
 }
 
+static const char *cmd_section(cmd_parms * cmd, void *dummy, const char *arg)
+{
+    apr_pool_t *pool;
+    char *endp, *name, *where;
+	const char *errmsg;
+	ap_command_t *command;
+    if (ap_commands == NULL) {
+        pool = cmd->pool;
+        ap_commands = apr_hash_make(pool);
+        ap_assert(ap_commands != NULL);
+        apr_pool_cleanup_register(pool, &ap_commands,
+                                  ap_pool_cleanup_set_null,
+                                  apr_pool_cleanup_null);
+    }
+    else {
+        pool = apr_hash_pool_get(ap_commands);
+    }
+
+    endp = (char *) ap_strrchr_c(arg, '>');
+    if (endp == NULL) {
+        return BEGIN_CMD "> directive missing closing '>'";
+    }
+
+    if (endp == arg) {
+        return BEGIN_CMD " command definition: empty name";
+    }
+
+    warn_if_non_blank(APLOGNO(02801) "non blank chars found after "
+                      BEGIN_CMD " closing '>'",
+                      endp+1, cmd->config_file);
+
+    /* coldly drop '>[^>]*$' out */
+    *endp = '\0';
+    name = ap_getword_conf(pool, &arg);
+    if (empty_string_p(name)) {
+        return BEGIN_CMD " command definition: name not found";
+    }
+
+    ap_str_tolower(name);
+    command = apr_hash_get(ap_commands, name, APR_HASH_KEY_STRING);
+
+    if (command != NULL) {
+        /* already defined: warn about the redefinition */
+        ap_log_error(APLOG_MARK, APLOG_WARNING, 0, NULL, APLOGNO(02802)
+                     "command '%s' multiply defined: "
+                     "%s, redefined on line %d of \"%s\"",
+                     command->name, command->location,
+                     cmd->config_file->line_number, cmd->config_file->name);
+    }
+    else {
+        /* allocate a new command */
+        command = (ap_command_t *) apr_palloc(pool, sizeof(ap_command_t));
+        command->name = name;
+    }
+
+    //debug(fprintf(stderr, "command_section: name=%s\n", name));
+
+    /* get command arguments */
+    command->location = apr_psprintf(pool,
+                                   "defined on line %d of \"%s\"",
+                                   cmd->config_file->line_number,
+                                   cmd->config_file->name);
+    //debug(fprintf(stderr, "command_section: location=%s\n", command->location));
+
+    where =
+        apr_psprintf(pool, "command '%s' (%s)", command->name, command->location);
+
+    /*if (looks_like_an_argument(name)) {
+        ap_log_error(APLOG_MARK, APLOG_WARNING, 0, NULL, APLOGNO(02803)
+                     "%s better prefix a command name with any of '%s'",
+                     where, ARG_PREFIX);
+    }
+
+    /* get command parameters */
+    //command->arguments = get_arguments(pool, arg);*/
+
+    errmsg = get_lines_till_end_token(pool, cmd->config_file,
+                                      END_CMD, BEGIN_CMD,
+                                      where, &command->contents);
+
+    if (errmsg) {
+        return apr_psprintf(cmd->temp_pool,
+                            "%s" APR_EOL_STR "\tcontents error: %s",
+                            where, errmsg);
+    }
+
+    /* store the new command */
+    apr_hash_set(ap_commands, name, APR_HASH_KEY_STRING, command);
+	return NULL;
+}
+
 /*
   create an array config stream insertion "object".
   could be exported.
@@ -365,6 +458,7 @@ static void * merge_server_config(apr_pool_t *p, void *parentv, void *childv)
 }*/
 
 static const command_rec mod_cmds[] = {
+// 	AP_INIT_RAW_ARGS(BEGIN_CMD, cmd_section, NULL, EXEC_ON_READ | OR_ALL, "Beginning of a cmd definition section."),
     AP_INIT_RAW_ARGS(EXEC_CMD, exec_cmd, NULL, EXEC_ON_READ | OR_ALL, "Use of a command."),
 //	AP_INIT_TAKE_ARGV("GetArgs", get_args, NULL, EXEC_ON_READ | OR_ALL, "Test for parsing args."),
 	{NULL}
