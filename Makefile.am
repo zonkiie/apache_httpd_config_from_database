@@ -21,5 +21,9 @@ CLEANFILES = *.so *.la *.lo *.slo
 all-local: mod_cmd_config.so
 mod_cmd_config.so: mod_cmd_config.c lib_apache_config.a
 	apxs -I. -a -c -o $@ $^
+mod_db_config.so: mod_db_config.c lib_apache_config.a
+	apxs -I. -a -c -o $@ $^
 apmod:
-	sudo apxs -I. -a -i -c mod_cmd_config.c lib_apache_config.a; sudo systemctl restart apache2
+	sudo apxs -I. -a -i -c mod_cmd_config.c lib_apache_config.a
+	sudo apxs -I. -a -i -c mod_db_config.c lib_apache_config.a
+	sudo systemctl restart apache2

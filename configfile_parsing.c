@@ -1,5 +1,13 @@
 #include <includes.h>
 
+void free_config_storage(config_storage* storage)
+{
+	for(int st_i = 0; storage[st_i].key != NULL && storage[st_i].storage != NULL; st_i++)
+	{
+		free_cstr(storage[st_i].storage);
+	}
+}
+
 int parse_configstring(const char * line, char * key, char * value)
 {
 	size_t s = sscanf(line, "%[^#^=]=%[^\n]", key, value);
@@ -45,7 +53,7 @@ bool parse_configfile_with_storage(const char * configfile, config_storage stora
 				{
 					if(!strcmp(storage[st_i].key, key))
 					{
-						storage[st_i].storage = strdup(value);
+						*(storage[st_i].storage) = strdup(value);
 						break;
 					}
 				}

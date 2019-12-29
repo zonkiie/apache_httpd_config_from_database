@@ -42,12 +42,12 @@ If using the apache module, you should know what you are doing!
     make
     
 ## Command Line to compile and install module and restart apache
-    sudo apxs -I. -a -i -c ap_config_mod.c lib_apache_config.a; sudo systemctl restart apache2
+    sudo apxs -I. -a -i -c mod_cmd_config.c lib_apache_config.a; sudo systemctl restart apache2
 or simply
 	make apmod
 
-## Example apache config file /etc/apache2/mods-available/mod_ap_config.conf - only to see if arg parsing works - will be changed later
-    <IfModule ap_config_mod.c>
+## Example apache config file /etc/apache2/mods-available/mod_cmd_config.conf - only to see if arg parsing works - will be changed later
+    <IfModule mod_cmd_config.c>
     <Command load_vhosts>
     Exec "/usr/sbin/ls"
     </Command>

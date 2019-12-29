@@ -206,6 +206,11 @@ int main(int argc, char *argv[])
 	if(cparams.query != NULL) reassign_cstr(&query, cparams.query);
 	if(cparams.update_intervall != -1) update_intervall = cparams.update_intervall;
 	if(strcmp(configfile, "")) parse_configfile_callback(configfile, handle_configfile_entries);
+	// Preparation work for storing config in local instead of global variables.
+	/*_cleanup_cstr_ char * bal = NULL;
+	if(strcmp(configfile, "")) parse_configfile_with_storage(configfile, (config_storage[]){{"bal", &bal},{NULL, NULL}});
+	printf("Bal: %s\n", bal);
+	return(0);*/
 	if(mountpoint != NULL) fuse_opt_add_arg(&args, mountpoint);
 	if(cparams.print_config)
 	{

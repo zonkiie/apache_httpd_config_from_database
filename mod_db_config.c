@@ -11,8 +11,10 @@
 #include "apr_strings.h"
 #include "apr_hash.h"
 
+#include "mod_dbd.h"
+
 #define EXEC_CMD "ExecuteCommand"
-#define LOGFILE_CMD "/dev/shm/mod_cmd_config.log"
+#define LOGFILE_CMD "/dev/shm/ap_mod_conf.log"
 
 typedef struct
 {
@@ -308,18 +310,102 @@ static const char *exec_cmd(cmd_parms * cmd, void *dummy, const char *arg)
 	return NULL;
 }
 
+// Here the live config of apache starts
+// Lets try it...
+
+typedef struct {
+	const char * servername;
+	apr_array_header_t * serveraliases;
+	int vhost_type;
+	const char * target;
+	const char * ssl_pem_file;
+	const char * ssl_crt_file;
+	server_rec * server;
+} ap_config_server;
+
+/// server_rec, 
+/// @see mod_vhost_alias.c:
+
+/* optional functions imported from mod_dbd */
+static APR_OPTIONAL_FN_TYPE(ap_dbd_prepare) *dbd_prepare_fn = NULL;
+static APR_OPTIONAL_FN_TYPE(ap_dbd_acquire) *dbd_acquire_fn = NULL;
+
+static void * create_server_config(apr_pool_t *p, server_rec *s)
+{
+	debug_printf("Server rec name: %s\n", s->context);
+	if (!dbd_prepare_fn) {
+		dbd_prepare_fn = 
+					APR_RETRIEVE_OPTIONAL_FN(ap_dbd_prepare);
+		dbd_acquire_fn = 
+					APR_RETRIEVE_OPTIONAL_FN(ap_dbd_acquire);
+	}
+    if (!dbd_prepare_fn || !dbd_acquire_fn)
+        return "mod_dbd must be enabled to use ap_config_mod";
+
+	return NULL;
+}
+
+// The vhosts should only be appended, not replaced.
+static void * merge_server_config(apr_pool_t *p, void *parentv, void *childv)
+{
+	debug_line;
+	return NULL;
+}
+
+// In Configfile you can give these args:
+// GetArgs "Arg 1" "Arg 2" "Arg 3" Arg4
+/*static const char *get_args(cmd_parms *cmd, void *dc, int argc, char *const argv[])
+{
+	FILE *logfile = fopen(LOGFILE_CMD, "w+");
+	for(int i = 0; i < argc; i++)
+	{
+		fprintf(logfile, "Arg %d: %s\n", i, argv[i]);
+	}
+	fclose(logfile);
+}*/
+
 static const command_rec mod_cmds[] = {
     AP_INIT_RAW_ARGS(EXEC_CMD, exec_cmd, NULL, EXEC_ON_READ | OR_ALL, "Use of a command."),
+//	AP_INIT_TAKE_ARGV("GetArgs", get_args, NULL, EXEC_ON_READ | OR_ALL, "Test for parsing args."),
 	{NULL}
 };
 
-AP_DECLARE_MODULE(mod_cmd_config) = {
+static int translate_path(request_rec *r)
+{
+    int nelts = r->server->names->nelts;
+	debug_printf("Server_Rec: %s, Hostname: %s, nelts: %d\n", r->server->server_hostname, r->hostname, nelts);
+	debug_printf("Server Context: %s\n", r->server->context);
+	char * document_root = ap_context_document_root(r);
+	debug_printf("Document Root: %s\n", document_root);
+	//debug_printf("Server Module Config: %s\n", config[0]);
+    char **names = (char **) r->server->names->elts;
+
+    for (int i = 0; i < nelts; i++) {
+		debug_printf("El %d: %s\n", i, names[i]);
+	}
+	//return DECLINED;
+	return OK;
+}
+
+static void register_hooks(apr_pool_t *p)
+{
+    static const char * const aszPre[]={ "mod_macro.c",NULL };
+	debug_line;
+	
+	ap_hook_handler(translate_path, NULL, NULL, APR_HOOK_FIRST);
+    //ap_hook_translate_name(translate_path, aszPre, NULL, APR_HOOK_MIDDLE);
+}
+
+
+AP_DECLARE_MODULE(mod_ap_config) = {
     STANDARD20_MODULE_STUFF,    /* common stuff */
         NULL,                   /* create per-directory config */
         NULL,                   /* merge per-directory config structures */
-        NULL,                   /* create per-server config structure */
-        NULL,                   /* merge per-server config structures */
+        create_server_config,                   /* create per-server config structure */
+        merge_server_config,                   /* merge per-server config structures */
         mod_cmds,               /* configuration commands */
-        NULL                    /* register hooks */
+        register_hooks                    /* register hooks */
 };
 
+// To be removed...
+//int main(){}
