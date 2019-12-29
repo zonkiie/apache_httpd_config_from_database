@@ -1,7 +1,7 @@
 AUTOMAKE_OPTIONS = foreign
 bin_PROGRAMS = ap_config ap_configfs
 noinst_LIBRARIES = lib_apache_config.a 
-lib_apache_config_a_SOURCES = ap_db_vhostreader.c odbc_functions.c globals.c
+lib_apache_config_a_SOURCES = ap_db_vhostreader.c odbc_functions.c globals.c configfile_parsing.c
 ap_config_SOURCES = ap_config.c
 ap_config_LDADD = lib_apache_config.a
 ap_config_LDFLAGS = 
@@ -18,8 +18,8 @@ CLEANFILES = *.so *.la *.lo *.slo
 #ap_config_mod_so_COMPILE = apxs -I. -a -c ap_config_mod.c
 # install-exec-local: ap_config_mod.c
 # 	apxs -I. -a -c $^
-all-local: ap_config_mod.so
-ap_config_mod.so: ap_config_mod.c lib_apache_config.a
+all-local: mod_cmd_config.so
+mod_cmd_config.so: mod_cmd_config.c lib_apache_config.a
 	apxs -I. -a -c -o $@ $^
 apmod:
-	sudo apxs -I. -a -i -c ap_config_mod.c lib_apache_config.a; sudo systemctl restart apache2
+	sudo apxs -I. -a -i -c mod_cmd_config.c lib_apache_config.a; sudo systemctl restart apache2

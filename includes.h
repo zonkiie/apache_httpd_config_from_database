@@ -22,6 +22,7 @@
 #include <linux/limits.h>
 
 #include <debug_macros.h>
+#include <configfile_parsing.h>
 #include <globals.h>
 #include <ap_db_vhostreader.h>
 #include <odbc_functions.h>

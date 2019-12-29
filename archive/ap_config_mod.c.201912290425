@@ -11,7 +11,7 @@
 #include "apr_strings.h"
 #include "apr_hash.h"
 
-#include "mod_dbd.h"
+//#include "mod_dbd.h"
 
 #define EXEC_CMD "ExecuteCommand"
 #define LOGFILE_CMD "/dev/shm/ap_mod_conf.log"
