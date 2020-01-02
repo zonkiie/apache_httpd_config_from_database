@@ -10,19 +10,14 @@
 #include "apr.h"
 #include "apr_strings.h"
 #include "apr_hash.h"
+#include "apr_dbd.h"
+#include "apr_strings.h"
+#include "apr_lib.h"
 
 #include "mod_dbd.h"
 
-#define EXEC_CMD "ExecuteCommand"
-#define LOGFILE_CMD "/dev/shm/ap_mod_conf.log"
-
-typedef struct
-{
-    char *name;                    /* lower case name of the command */
-    apr_array_header_t *arguments; /* of char*, command parameter names */
-    apr_array_header_t *contents;  /* of char*, command body */
-    char *location;                /* of command definition, for error messages */
-} ap_command_t;
+#define EXEC_CMD "ExecuteSQL"
+#define LOGFILE "/dev/shm/mod_db_config.log"
 
 typedef struct
 {
@@ -279,29 +274,38 @@ static ap_configfile_t *make_array_config(apr_pool_t * pool,
 
 static const char *exec_cmd(cmd_parms * cmd, void *dummy, const char *arg)
 {
-    char *execute_command, *recursion, *where;
-    const char *errmsg;
-	ap_command_t * command;
+    char *sql, *where, *line = NULL;
+	ap_dbd_t *dbd = NULL;
+	apr_dbd_results_t *res = NULL;
+	apr_dbd_row_t *row = NULL;
+	dbd = ap_dbd_open(cmd->temp_pool, cmd->server);
+	//if ((dbd = dbd_acquire_fn(r)) == NULL) {
+	
     apr_array_header_t *replacements;
     apr_array_header_t *contents;
-	if((execute_command = ap_getword_conf(cmd->temp_pool, &arg)) == NULL) return "No command given.";
+	if((sql = ap_getword_conf(cmd->temp_pool, &arg)) == NULL) return "No command given.";
 	
 	where = apr_psprintf(cmd->temp_pool, "File '%s' (%d)", cmd->config_file->name, cmd->config_file->line_number);
 	
-	FILE* resultfp = popen(execute_command, "r");
-	
-	char* command_result = NULL;
-	size_t command_result_len;
-	ssize_t bytes_read = getdelim( &command_result, &command_result_len, '\0', resultfp);
-	if ( bytes_read == -1) {
-		return "Could not read command.";
-	}
-	fclose(resultfp);
-	
 	contents = apr_array_make(cmd->temp_pool, 1, sizeof(char *));
-	char **new = apr_array_push(contents);
-	*new = apr_pstrdup(cmd->temp_pool, command_result);
-	free(command_result);
+	
+	int sqlstate = apr_dbd_select(dbd->driver, cmd->temp_pool, dbd->handle, &res, sql, 1);
+	int rows = apr_dbd_num_tuples(dbd->driver, res);
+	int cols = apr_dbd_num_cols(dbd->driver, res);
+	while(!apr_dbd_get_row(dbd->driver, cmd->temp_pool, res, &row, -1))
+	{
+		char **new = apr_array_push(contents);
+		line = apr_pstrdup(cmd->temp_pool, "");
+		for(int i = 0; i < cols; i++)
+		{
+			char * col = (char*)apr_dbd_get_entry(dbd->driver, row, i);
+			line = apr_pstrcat(cmd->temp_pool, line, " ", col, NULL);
+			fprintf(stderr, "Col %d: %s, line: %s\n", i, col, line);
+		}
+		line = apr_pstrcat(cmd->temp_pool, line, "\n", NULL);
+		*new = apr_pstrdup(cmd->temp_pool, line);
+	}
+	ap_dbd_close(cmd->server, dbd);
 
 	/* the current "config file" is replaced by a string array...
        at the end of processing the array, the initial config file
@@ -354,19 +358,19 @@ static void * merge_server_config(apr_pool_t *p, void *parentv, void *childv)
 
 // In Configfile you can give these args:
 // GetArgs "Arg 1" "Arg 2" "Arg 3" Arg4
-/*static const char *get_args(cmd_parms *cmd, void *dc, int argc, char *const argv[])
+static const char *get_args(cmd_parms *cmd, void *dc, int argc, char *const argv[])
 {
-	FILE *logfile = fopen(LOGFILE_CMD, "w+");
+	FILE *logfile = fopen(LOGFILE, "w+");
 	for(int i = 0; i < argc; i++)
 	{
 		fprintf(logfile, "Arg %d: %s\n", i, argv[i]);
 	}
 	fclose(logfile);
-}*/
+}
 
 static const command_rec mod_cmds[] = {
-    AP_INIT_RAW_ARGS(EXEC_CMD, exec_cmd, NULL, EXEC_ON_READ | OR_ALL, "Use of a command."),
-//	AP_INIT_TAKE_ARGV("GetArgs", get_args, NULL, EXEC_ON_READ | OR_ALL, "Test for parsing args."),
+//     AP_INIT_RAW_ARGS(EXEC_CMD, exec_cmd, NULL, EXEC_ON_READ | OR_ALL, "Use of a command."),
+	AP_INIT_TAKE_ARGV("GetArgs", get_args, NULL, EXEC_ON_READ | OR_ALL, "Test for parsing args."),
 	{NULL}
 };
 
@@ -397,7 +401,7 @@ static void register_hooks(apr_pool_t *p)
 }
 
 
-AP_DECLARE_MODULE(mod_ap_config) = {
+AP_DECLARE_MODULE(mod_db_config) = {
     STANDARD20_MODULE_STUFF,    /* common stuff */
         NULL,                   /* create per-directory config */
         NULL,                   /* merge per-directory config structures */

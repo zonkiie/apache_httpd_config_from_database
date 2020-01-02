@@ -36,6 +36,24 @@ bool parse_configfile_callback(const char * configfile, void(*handle_function)(c
 	}
 }
 
+/**
+ * Stores the configuration data in variables.
+ * @param configfile: The configfile to parse
+ * @param storage: An storage array of type config_storage. We can pass the key and the storage variable (should be char * string, passed by reference).
+ * @return true if reading and parsing was successfull, false if an error occured
+ * Please remember to free your variables or struct.
+ * if in your configfile this line appears:
+ * key=val
+ * and your initialization routine has this code
+ * <code>
+	const char * configfile = "myconfig.conf";
+	_cleanup_cstr_ char * key = NULL;
+	parse_configfile_with_storage(configfile, (config_storage[]){{"key", &key},{NULL, NULL}});
+	printf("Key: %s\n", key);
+ * </code>
+ * then the output will look like:
+ * Key: val
+ */
 bool parse_configfile_with_storage(const char * configfile, config_storage storage[])
 {
 	FILE *f = fopen(configfile, "r");

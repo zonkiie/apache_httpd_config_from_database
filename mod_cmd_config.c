@@ -12,7 +12,7 @@
 #include "apr_hash.h"
 
 #define EXEC_CMD "ExecuteCommand"
-#define LOGFILE_CMD "/dev/shm/mod_cmd_config.log"
+#define LOGFILE "/dev/shm/mod_cmd_config.log"
 
 typedef struct
 {
