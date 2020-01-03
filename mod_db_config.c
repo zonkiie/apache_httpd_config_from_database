@@ -16,7 +16,7 @@
 
 #include "mod_dbd.h"
 
-#define EXEC_CMD "ExecuteSQL"
+#define EXEC_SQL "ExecuteSQL"
 #define LOGFILE "/dev/shm/mod_db_config.log"
 
 typedef struct
@@ -272,7 +272,7 @@ static ap_configfile_t *make_array_config(apr_pool_t * pool,
     return ap_pcfg_open_custom(pool, where, (void *) ls, array_getch, array_getstr, array_close);
 }
 
-static const char *exec_cmd(cmd_parms * cmd, void *dummy, const char *arg)
+static const char *exec_sql(cmd_parms * cmd, void *dummy, const char *arg)
 {
     char *sql, *where, *line = NULL;
 	ap_dbd_t *dbd = NULL;
@@ -300,7 +300,7 @@ static const char *exec_cmd(cmd_parms * cmd, void *dummy, const char *arg)
 		{
 			char * col = (char*)apr_dbd_get_entry(dbd->driver, row, i);
 			line = apr_pstrcat(cmd->temp_pool, line, " ", col, NULL);
-			fprintf(stderr, "Col %d: %s, line: %s\n", i, col, line);
+			debug_printf("Col %d: %s, line: %s\n", i, col, line);
 		}
 		line = apr_pstrcat(cmd->temp_pool, line, "\n", NULL);
 		*new = apr_pstrdup(cmd->temp_pool, line);
@@ -369,8 +369,8 @@ static const char *get_args(cmd_parms *cmd, void *dc, int argc, char *const argv
 }
 
 static const command_rec mod_cmds[] = {
-//     AP_INIT_RAW_ARGS(EXEC_CMD, exec_cmd, NULL, EXEC_ON_READ | OR_ALL, "Use of a command."),
-	AP_INIT_TAKE_ARGV("GetArgs", get_args, NULL, EXEC_ON_READ | OR_ALL, "Test for parsing args."),
+    AP_INIT_RAW_ARGS(EXEC_SQL, exec_sql, NULL, EXEC_ON_READ | OR_ALL, "Use of a command."),
+// 	AP_INIT_TAKE_ARGV("GetArgs", get_args, NULL, EXEC_ON_READ | OR_ALL, "Test for parsing args."),
 	{NULL}
 };
 
