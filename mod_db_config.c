@@ -278,7 +278,9 @@ static const char *exec_sql(cmd_parms * cmd, void *dummy, const char *arg)
 	ap_dbd_t *dbd = NULL;
 	apr_dbd_results_t *res = NULL;
 	apr_dbd_row_t *row = NULL;
-	dbd = ap_dbd_open(cmd->temp_pool, cmd->server);
+	
+	// This will fail because cmd->server is null as it's called in the startup context
+	if((dbd = ap_dbd_open(cmd->temp_pool, cmd->server)) == NULL) return "Could not dbd open!";
 	//if ((dbd = dbd_acquire_fn(r)) == NULL) {
 	
     apr_array_header_t *replacements;
@@ -393,11 +395,11 @@ static int translate_path(request_rec *r)
 
 static void register_hooks(apr_pool_t *p)
 {
-    static const char * const aszPre[]={ "mod_macro.c",NULL };
+    static const char * const aszPre[]={ "mod_macro.c", "mod_dbd.c", NULL };
 	debug_line;
 	
-	ap_hook_handler(translate_path, NULL, NULL, APR_HOOK_FIRST);
-    //ap_hook_translate_name(translate_path, aszPre, NULL, APR_HOOK_MIDDLE);
+	//ap_hook_handler(translate_path, NULL, NULL, APR_HOOK_FIRST);
+    ap_hook_translate_name(translate_path, aszPre, NULL, APR_HOOK_MIDDLE);
 }
 
 
@@ -410,6 +412,3 @@ AP_DECLARE_MODULE(mod_db_config) = {
         mod_cmds,               /* configuration commands */
         register_hooks                    /* register hooks */
 };
-
-// To be removed...
-//int main(){}
