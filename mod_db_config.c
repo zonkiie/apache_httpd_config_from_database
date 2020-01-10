@@ -17,6 +17,8 @@
 #include "mod_dbd.h"
 
 #define EXEC_SQL "ExecuteSQL"
+#define DB_DRIVER "DBDriver"
+#define DB_DSN "DBDSN"
 #define LOGFILE "/dev/shm/mod_db_config.log"
 
 typedef struct
@@ -31,6 +33,9 @@ typedef struct
 
 
 static apr_hash_t *ap_commands = NULL;
+static char * dsn;
+static char * driver;
+static ap_dbd_t *dbd = NULL;
 
 #define empty_string_p(p) (!(p) || *(p) == '\0')
 #define trim(line) while (*(line) == ' ' || *(line) == '\t') (line)++
@@ -275,7 +280,6 @@ static ap_configfile_t *make_array_config(apr_pool_t * pool,
 static const char *exec_sql(cmd_parms * cmd, void *dummy, const char *arg)
 {
     char *sql, *where, *line = NULL;
-	ap_dbd_t *dbd = NULL;
 	apr_dbd_results_t *res = NULL;
 	apr_dbd_row_t *row = NULL;
 	
@@ -370,8 +374,18 @@ static const char *get_args(cmd_parms *cmd, void *dc, int argc, char *const argv
 	fclose(logfile);
 }
 
+static const char * get_driver(cmd_parms *cmd, void *dc, int argc, char *const argv[])
+{
+}
+
+static const char * get_dsn(cmd_parms *cmd, void *dc, int argc, char *const argv[])
+{
+}
+
 static const command_rec mod_cmds[] = {
     AP_INIT_RAW_ARGS(EXEC_SQL, exec_sql, NULL, EXEC_ON_READ | OR_ALL, "Use of a command."),
+    AP_INIT_TAKE_ARGV(DB_DRIVER, get_driver, NULL, EXEC_ON_READ | OR_ALL, "Set DB Driver."),
+    AP_INIT_TAKE_ARGV(DB_DSN, get_dsn, NULL, EXEC_ON_READ | OR_ALL, "Set DB DSN."),
 // 	AP_INIT_TAKE_ARGV("GetArgs", get_args, NULL, EXEC_ON_READ | OR_ALL, "Test for parsing args."),
 	{NULL}
 };
