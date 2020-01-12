@@ -284,6 +284,7 @@ static const char *exec_sql(cmd_parms * cmd, void *dummy, const char *arg)
 	apr_dbd_results_t *res = NULL;
 	apr_dbd_row_t *row = NULL;
 	apr_status_t astat;
+	//apr_status_t astat = apr_dbd_init(cmd->temp_pool);
 	
 	if((astat = apr_dbd_open(apr_driver, cmd->temp_pool, db_dsn, &dbd)) != 0) return "Failed to open Database!";
 	
@@ -299,22 +300,23 @@ static const char *exec_sql(cmd_parms * cmd, void *dummy, const char *arg)
 	
 	contents = apr_array_make(cmd->temp_pool, 1, sizeof(char *));
 	
-	int sqlstate = apr_dbd_select(apr_driver, cmd->temp_pool, dbd, &res, sql, 1);
-	int rows = apr_dbd_num_tuples(apr_driver, res);
-	int cols = apr_dbd_num_cols(apr_driver, res);
-	while(!apr_dbd_get_row(apr_driver, cmd->temp_pool, res, &row, -1))
+	int sqlstate = apr_dbd_select(/*dbd->driver*/ apr_driver, cmd->temp_pool, dbd/*dbd->handle*/, &res, sql, 1);
+	int rows = apr_dbd_num_tuples(/*dbd->driver*/ apr_driver, res);
+	int cols = apr_dbd_num_cols(/*dbd->driver*/ apr_driver, res);
+	while(!apr_dbd_get_row(/*dbd->driver*/ apr_driver, cmd->temp_pool, res, &row, -1))
 	{
 		char **new = apr_array_push(contents);
 		line = apr_pstrdup(cmd->temp_pool, "");
 		for(int i = 0; i < cols; i++)
 		{
-			char * col = (char*)apr_dbd_get_entry(apr_driver, row, i);
+			char * col = (char*)apr_dbd_get_entry(/*dbd->driver*/ apr_driver, row, i);
 			line = apr_pstrcat(cmd->temp_pool, line, " ", col, NULL);
 			debug_printf("Col %d: %s, line: %s\n", i, col, line);
 		}
 		line = apr_pstrcat(cmd->temp_pool, line, "\n", NULL);
 		*new = apr_pstrdup(cmd->temp_pool, line);
 	}
+	//ap_dbd_close(cmd->server, dbd);
 	apr_dbd_close(apr_driver, dbd);
 
 	/* the current "config file" is replaced by a string array...
