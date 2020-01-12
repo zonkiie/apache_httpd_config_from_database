@@ -285,7 +285,7 @@ static const char *exec_sql(cmd_parms * cmd, void *dummy, const char *arg)
 	apr_dbd_row_t *row = NULL;
 	apr_status_t astat;
 	
-	if((astat = apr_dbd_open(apr_driver, cmd->temp_pool, db_dsn, &dbd)) != 0) return "Failed to open Database!";
+	if((astat = apr_dbd_open(apr_driver, cmd->temp_pool, db_dsn, &dbd)) != APR_SUCCESS) return "Failed to open Database!";
 	
 	// This will fail because cmd->server is null as it's called in the startup context
 	//if((dbd = ap_dbd_open(cmd->temp_pool, cmd->server)) == NULL) return "Could not dbd open!";
@@ -390,9 +390,9 @@ static const char *set_driver(cmd_parms *cmd, void *mconfig, const char *arg)
 {
 	// Evtl hier initialisieren
 	apr_status_t astat;
-	if((astat = apr_dbd_init(cmd->temp_pool)) != 0) return "Failed to initialize structure!";
+	apr_dbd_init(cmd->temp_pool);
 	db_driver = apr_pstrdup(cmd->temp_pool, arg);
-	if((astat = apr_dbd_get_driver(cmd->temp_pool, db_driver, &apr_driver))	!= 0) return "Failed to get driver structure!";
+	if((astat = apr_dbd_get_driver(cmd->temp_pool, db_driver, &apr_driver))	!= APR_SUCCESS) return "Failed to get driver structure!";
 	return NULL;
 }
 
