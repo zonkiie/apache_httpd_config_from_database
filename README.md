@@ -27,6 +27,10 @@ If using the apache module, you should know what you are doing!
 ## Reading file content
   * [https://stackoverflow.com/questions/174531/how-to-read-the-content-of-a-file-to-a-string-in-c](https://stackoverflow.com/questions/174531/how-to-read-the-content-of-a-file-to-a-string-in-c)
 
+## Apache (apr) API
+  * [https://ci.apache.org/projects/httpd/trunk/doxygen/index.html](https://ci.apache.org/projects/httpd/trunk/doxygen/index.html)
+  * [https://apr.apache.org/docs/apr-util/1.6/index.html](https://apr.apache.org/docs/apr-util/1.6/index.html)
+
 ## Required Libraries
  * unixodbc
  * unixodbc-dev
@@ -53,7 +57,13 @@ or simply
     </Command>
     </IfModule>
 
-    
+## Example apache config file /etc/apache2/mods-available/mod_db_config.conf
+	DBDriver sqlite3
+	DBDSN "/dev/shm/mydb.sqlite"
+	ExecuteSQL "select '<VirtualHost *:80>'||x'0a'||'ServerName ' || vhost_name ||x'0a'||'DocumentRoot ' || target || x'0a'||'</VirtualHost>'||x'0a' as vhostdata from vhosts;"
+
+## Example DB Create script
+see create_db.sh
 
 ## Example for configfile (/etc/ap_configfs.conf, ./ap_configfs.conf)
     dsn=Driver=SQLITE3;Database=/tmp/testdb.sqlite

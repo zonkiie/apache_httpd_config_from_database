@@ -285,11 +285,11 @@ static const char *exec_sql(cmd_parms * cmd, void *dummy, const char *arg)
 	apr_dbd_row_t *row = NULL;
 	apr_status_t astat;
 	
-	if((astat = apr_dbd_open(apr_driver, cmd->temp_pool, db_dsn, &dbd)) != APR_SUCCESS) return "Failed to open Database!";
-	
-	// This will fail because cmd->server is null as it's called in the startup context
-	//if((dbd = ap_dbd_open(cmd->temp_pool, cmd->server)) == NULL) return "Could not dbd open!";
-	//if ((dbd = dbd_acquire_fn(r)) == NULL) {
+	if((astat = apr_dbd_open(apr_driver, cmd->temp_pool, db_dsn, &dbd)) != APR_SUCCESS)
+	{
+		debug_printf("Error: %s\n", apr_dbd_error(apr_driver, dbd, astat));
+		return apr_dbd_error(apr_driver, dbd, astat);
+	}
 	
     apr_array_header_t *replacements;
     apr_array_header_t *contents;
@@ -300,6 +300,11 @@ static const char *exec_sql(cmd_parms * cmd, void *dummy, const char *arg)
 	contents = apr_array_make(cmd->temp_pool, 1, sizeof(char *));
 	
 	int sqlstate = apr_dbd_select(apr_driver, cmd->temp_pool, dbd, &res, sql, 1);
+	if(sqlstate != 0)
+	{
+		debug_printf("Error: %s\n", apr_dbd_error(apr_driver, dbd, sqlstate));
+		return apr_dbd_error(apr_driver, dbd, sqlstate);
+	}
 	int rows = apr_dbd_num_tuples(apr_driver, res);
 	int cols = apr_dbd_num_cols(apr_driver, res);
 	while(!apr_dbd_get_row(apr_driver, cmd->temp_pool, res, &row, -1))
@@ -310,7 +315,7 @@ static const char *exec_sql(cmd_parms * cmd, void *dummy, const char *arg)
 		{
 			char * col = (char*)apr_dbd_get_entry(apr_driver, row, i);
 			line = apr_pstrcat(cmd->temp_pool, line, " ", col, NULL);
-			debug_printf("Col %d: %s, line: %s\n", i, col, line);
+			//debug_printf("Col %d: %s, line: %s\n", i, col, line);
 		}
 		line = apr_pstrcat(cmd->temp_pool, line, "\n", NULL);
 		*new = apr_pstrdup(cmd->temp_pool, line);
@@ -344,7 +349,6 @@ static const command_rec mod_cmds[] = {
     AP_INIT_RAW_ARGS(EXEC_SQL, exec_sql, NULL, EXEC_ON_READ | OR_ALL, "Use of a command."),
     AP_INIT_TAKE1(DB_DRIVER, set_driver, NULL, EXEC_ON_READ | OR_ALL, "Set DB Driver."),
     AP_INIT_TAKE1(DB_DSN, set_dsn, NULL, EXEC_ON_READ | OR_ALL, "Set DB DSN."),
-// 	AP_INIT_TAKE_ARGV("GetArgs", get_args, NULL, EXEC_ON_READ | OR_ALL, "Test for parsing args."),
 	{NULL}
 };
 
