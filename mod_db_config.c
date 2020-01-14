@@ -285,11 +285,7 @@ static const char *exec_sql(cmd_parms * cmd, void *dummy, const char *arg)
 	apr_dbd_row_t *row = NULL;
 	apr_status_t astat;
 	
-	if((astat = apr_dbd_open(apr_driver, cmd->temp_pool, db_dsn, &dbd)) != APR_SUCCESS)
-	{
-		debug_printf("Error: %s\n", apr_dbd_error(apr_driver, dbd, astat));
-		return apr_dbd_error(apr_driver, dbd, astat);
-	}
+	if((astat = apr_dbd_open(apr_driver, cmd->temp_pool, db_dsn, &dbd)) != APR_SUCCESS) return apr_dbd_error(apr_driver, dbd, astat);
 	
     apr_array_header_t *replacements;
     apr_array_header_t *contents;
@@ -300,11 +296,8 @@ static const char *exec_sql(cmd_parms * cmd, void *dummy, const char *arg)
 	contents = apr_array_make(cmd->temp_pool, 1, sizeof(char *));
 	
 	int sqlstate = apr_dbd_select(apr_driver, cmd->temp_pool, dbd, &res, sql, 1);
-	if(sqlstate != 0)
-	{
-		debug_printf("Error: %s\n", apr_dbd_error(apr_driver, dbd, sqlstate));
-		return apr_dbd_error(apr_driver, dbd, sqlstate);
-	}
+	if(sqlstate != 0) return apr_dbd_error(apr_driver, dbd, sqlstate);
+	
 	int rows = apr_dbd_num_tuples(apr_driver, res);
 	int cols = apr_dbd_num_cols(apr_driver, res);
 	while(!apr_dbd_get_row(apr_driver, cmd->temp_pool, res, &row, -1))
