@@ -42,25 +42,6 @@ static apr_dbd_t *dbd = NULL;
 #define trim(line) while (*(line) == ' ' || *(line) == '\t') (line)++
 
 /*
-  return configuration-parsed arguments from line as an array.
-  the line is expected not to contain any '\n'?
-*/
-static apr_array_header_t *get_arguments(apr_pool_t * pool, const char *line)
-{
-    apr_array_header_t *args = apr_array_make(pool, 1, sizeof(char *));
-
-    trim(line);
-    while (*line) {
-        char *arg = ap_getword_conf(pool, &line);
-        char **new = apr_array_push(args);
-        *new = arg;
-        trim(line);
-    }
-
-    return args;
-}
-
-/*
   Get next config if any.
   this may be called several times if there are continuations.
 */
@@ -153,105 +134,6 @@ static apr_status_t array_close(void *param)
     return APR_SUCCESS;
 }
 
-
-
-/*
-  warn if anything non blank appears, but ignore comments...
-*/
-static void warn_if_non_blank(const char * what,
-                              char * ptr,
-                              ap_configfile_t * cfg)
-{
-    char * p;
-    for (p=ptr; *p; p++) {
-        if (*p == '#')
-            break;
-        if (*p != ' ' && *p != '\t') {
-            ap_log_error(APLOG_MARK, APLOG_WARNING, 0, NULL, APLOGNO(02989)
-                         "%s on line %d of %s: %s",
-                         what, cfg->line_number, cfg->name, ptr);
-            break;
-        }
-    }
-}
-
-/*
-  get read lines as an array till end_token.
-  counts nesting for begin_token/end_token.
-  it assumes a line-per-line configuration (thru getline).
-  this function could be exported.
-  begin_token may be NULL.
-*/
-static char *get_lines_till_end_token(apr_pool_t * pool,
-                                      ap_configfile_t * config_file,
-                                      const char *end_token,
-                                      const char *begin_token,
-                                      const char *where,
-                                      apr_array_header_t ** plines)
-{
-    apr_array_header_t *lines = apr_array_make(pool, 1, sizeof(char *));
-    char line[MAX_STRING_LEN];  /* sorry, but this is expected by getline:-( */
-    int macro_nesting = 1, any_nesting = 1;
-    int line_number_start = config_file->line_number;
-
-    while (!ap_cfg_getline(line, MAX_STRING_LEN, config_file)) {
-        char *ptr = line;
-        char *first, **new;
-        /* skip comments */
-        if (*line == '#')
-            continue;
-        first = ap_getword_conf_nc(pool, &ptr);
-        if (first) {
-            /* detect nesting... */
-            if (!strncmp(first, "</", 2)) {
-                any_nesting--;
-                if (any_nesting < 0) {
-                    ap_log_error(APLOG_MARK, APLOG_WARNING,
-                                 0, NULL, APLOGNO(02793)
-                                 "bad (negative) nesting on line %d of %s",
-                                 config_file->line_number - line_number_start,
-                                 where);
-                }
-            }
-            else if (!strncmp(first, "<", 1)) {
-                any_nesting++;
-            }
-
-            if (!strcasecmp(first, end_token)) {
-                /* check for proper closing */
-                char * endp = (char *) ap_strrchr_c(line, '>');
-
-                /* this cannot happen if end_token contains '>' */
-                if (endp == NULL) {
-                  return "end directive missing closing '>'";
-                }
-
-                warn_if_non_blank(
-                    APLOGNO(02794) "non blank chars found after directive closing",
-                    endp+1, config_file);
-
-                macro_nesting--;
-                if (!macro_nesting) {
-                    if (any_nesting) {
-                        ap_log_error(APLOG_MARK,
-                                     APLOG_WARNING, 0, NULL, APLOGNO(02795)
-                                     "bad cumulated nesting (%+d) in %s",
-                                     any_nesting, where);
-                    }
-                    *plines = lines;
-                    return NULL;
-                }
-            }
-            else if (begin_token && !strcasecmp(first, begin_token)) {
-                macro_nesting++;
-            }
-        }
-        new = apr_array_push(lines);
-        *new = apr_psprintf(pool, "%s" APR_EOL_STR, line); /* put EOL back? */
-    }
-
-    return apr_psprintf(pool, "expected token not found: %s", end_token);
-}
 
 /*
   create an array config stream insertion "object".
