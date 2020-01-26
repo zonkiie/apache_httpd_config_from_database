@@ -37,6 +37,10 @@ or simply
 ## Example DB Create script
 see create_db.sh
 
+## Note
+You can't use mod_macro with mod_db_config or mod_cmd_config
+
+# ap_configfs
 ## Example for configfile (/etc/ap_configfs.conf, ./ap_configfs.conf)
     dsn=Driver=SQLITE3;Database=/tmp/testdb.sqlite
     query=select 'Use Vhost example example.com /home/example.com' as entry union select 'Use VHost example2 example2.com /home/example2.com' as entry union select 'Use Redirect example3 example3.com https://www.google.de' as entry;
