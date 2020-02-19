@@ -19,6 +19,10 @@
 #define EXEC_SQL "ExecuteSQL"
 #define DB_DRIVER "DBDriver"
 #define DB_DSN "DBDSN"
+#define BEGIN_TEMPLATE_SECTION "<VHostTemplate"
+#define END_TEMPLATE_SECTION "</VHostTemplate>"
+#define USE_TEMPLATE "UseTemplate"
+#define UNDEF_TEMPLATE "UndefTemplate"
 #define LOGFILE "/dev/shm/mod_db_config.log"
 
 typedef struct
