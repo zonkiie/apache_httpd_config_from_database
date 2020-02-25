@@ -224,6 +224,11 @@ static const char *set_dsn(cmd_parms *cmd, void *mconfig, const char *arg)
 	return NULL;
 }
 
+static const char *collect_section_string()
+{
+	return NULL;
+}
+
 static const command_rec mod_cmds[] = {
     AP_INIT_RAW_ARGS(EXEC_SQL, exec_sql, NULL, EXEC_ON_READ | OR_ALL, "Use of a command."),
     AP_INIT_TAKE1(DB_DRIVER, set_driver, NULL, EXEC_ON_READ | OR_ALL, "Set DB Driver."),
