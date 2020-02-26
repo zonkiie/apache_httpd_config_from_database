@@ -224,8 +224,9 @@ static const char *set_dsn(cmd_parms *cmd, void *mconfig, const char *arg)
 	return NULL;
 }
 
-static const char *collect_section_string()
+static const char *collect_section_string(cmd_parms *cmd, void *dummy, const char *arg)
 {
+	
 	return NULL;
 }
 
