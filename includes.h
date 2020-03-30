@@ -26,5 +26,6 @@
 #include <globals.h>
 #include <ap_db_vhostreader.h>
 #include <odbc_functions.h>
+#include <pcretools.h>
 
 #endif
