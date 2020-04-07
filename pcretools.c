@@ -20,16 +20,46 @@ void insert_into_string(char * string, size_t offset, char * to_insert)
 	memcpy(left, to_insert, strlen(to_insert));
 }
 
-int preg_replace_r(char ** text, char * search, char * replacement, int flags)
+int substr_from_offsets(char ** dest, const char * text, size_t start, size_t end)
 {
-	if(flags == -1) flags = PCRE_NEWLINE_ANY|PCRE_DOTALL|PCRE_CASELESS;  /* PCRE_NEWLINE_ANY|PCRE_DOTALL|PCRE_UNGREEDY|PCRE_CASELESS, */
-	pcre *re;
-	const char *error;
-	int erroffset, ovector[OVECCOUNT], j, subject_length;
-	const char *submatch;
+	if(end < start) return -1;
+	*dest = strndup(text + start, end - start);
+	return strlen(*dest);
+}
 
+const char * pcre_str_error(int ecode)
+{
+	const char * errortext;
+	switch(ecode) {
+		case PCRE_ERROR_NOMATCH      : errortext = "String did not match the pattern";        break;
+		case PCRE_ERROR_NULL         : errortext = "Something was null";                      break;
+		case PCRE_ERROR_BADOPTION    : errortext = "A bad option was passed";                 break;
+		case PCRE_ERROR_BADMAGIC     : errortext = "Magic number bad (compiled re corrupt?)"; break;
+		case PCRE_ERROR_UNKNOWN_NODE : errortext = "Something kooky in the compiled re";      break;
+		case PCRE_ERROR_NOMEMORY     : errortext = "Ran out of memory";                       break;
+		default                      : errortext = "Unknown error";                           break;
+	} /* end switch */
+	return errortext;
+}
+
+void cleanup_pcre_t(pcre **re)
+{
+	if(*re != NULL)
+	{
+		pcre_free(*re);
+		*re = NULL;
+	}
+}
+
+int pcre_match_string_all(pregmatches** matches, const char * text, const char * search, int flags)
+{
+	if(flags == -1) flags = PCRE_NEWLINE_ANY|PCRE_DOTALL|PCRE_CASELESS|PCRE_UNGREEDY;  /* PCRE_NEWLINE_ANY|PCRE_DOTALL|PCRE_UNGREEDY|PCRE_CASELESS, */
+	_cleanup_pcre_t_ pcre *re;
+	const char *error;
+	int erroffset, ovector[OVECCOUNT], subject_length, rc, offset = 0;
+	*matches = (pregmatches*)malloc(sizeof(pregmatches*)+sizeof(pregmatch));
+	(*matches)->count = 0;
 	
-	subject_length = (int)strlen(*text);
 	re = pcre_compile(
 		search,               /* the pattern */
 		                      /* default options */
@@ -42,56 +72,73 @@ int preg_replace_r(char ** text, char * search, char * replacement, int flags)
 
 	if (re == NULL)
 	{
-		printf("PCRE compilation failed at offset %d: %s\n", erroffset, error);
+		fprintf(stderr, "PCRE compilation failed at offset %d: %s\n", erroffset, error);
 		return 1;
 	}
 	
-	int rc = pcre_exec(
-		re,                   /* the compiled pattern */
-		NULL,                 /* no extra data - we didn't study the pattern */
-		*text,              /* the subject string */
-		subject_length,       /* the length of the subject */
-		0,                    /* start at offset 0 in the subject */
-		PCRE_NEWLINE_ANY,                    /* default options */
-		ovector,              /* output vector for substring information */
-		OVECCOUNT);           /* number of elements in the output vector */
-	
-	if(rc <= 0)
+	while((rc = pcre_exec(
+			re,											/* the compiled pattern */
+			NULL,										/* no extra data - we didn't study the pattern */
+			text,										/* the subject string */
+			(subject_length = (int)strlen(text)),		/* the length of the subject */
+			offset,										/* start at offset 0 in the subject */
+			PCRE_NEWLINE_ANY,							/* default options */
+			ovector,									/* output vector for substring information */
+			OVECCOUNT)									/* number of elements in the output vector */
+	) > 0)
 	{
-		switch(rc) {
-			case PCRE_ERROR_NOMATCH      : fprintf(stderr, "String did not match the pattern\n");        break;
-			case PCRE_ERROR_NULL         : fprintf(stderr, "Something was null\n");                      break;
-			case PCRE_ERROR_BADOPTION    : fprintf(stderr, "A bad option was passed\n");                 break;
-			case PCRE_ERROR_BADMAGIC     : fprintf(stderr, "Magic number bad (compiled re corrupt?)\n"); break;
-			case PCRE_ERROR_UNKNOWN_NODE : fprintf(stderr, "Something kooky in the compiled re\n");      break;
-			case PCRE_ERROR_NOMEMORY     : fprintf(stderr, "Ran out of memory\n");                       break;
-			default                      : fprintf(stderr, "Unknown error\n");                           break;
-		} /* end switch */
-		return -1;
+		
+		if(rc < -1)
+		{
+			const char * errortext = pcre_str_error(rc);
+			fprintf(stderr, "%s\n", errortext);
+			return -1;
+		}
+		
+		//fprintf(stderr, "Start: %d, End: %d\n", ovector[0], ovector[1]); 
+		(*matches)->matches[(*matches)->count] = (pregmatch){.start = ovector[0], .end = ovector[1]};
+		offset = ovector[1];
+		(*matches) = realloc((*matches), sizeof(pregmatches*) + ((++(*matches)->count) + 1)*sizeof(pregmatch));
 	}
-	for(j=0; j<rc; j++) {
-        pcre_get_substring(*text, ovector, rc, j, &(submatch));
-        printf("Match(%2d/%2d): (%2d,%2d): '%s'\n", j, rc-1, ovector[j*2], ovector[j*2+1], submatch);
-		pcre_free_substring(submatch);
+	return (*matches)->count;
+}
 
-      } /* end for */
+int pcre_replace_r(char ** text, const char * search, const char * replacement, int flags)
+{
+	if(flags == -1) flags = PCRE_NEWLINE_ANY|PCRE_DOTALL|PCRE_CASELESS|PCRE_UNGREEDY;  /* PCRE_NEWLINE_ANY|PCRE_DOTALL|PCRE_UNGREEDY|PCRE_CASELESS, */
+	pregmatches *matches = NULL;
+	int matchcount = pcre_match_string_all(&matches, *text, search, flags);
 	
-	fprintf(stderr, "Len: %ld\n", strlen(*text));
-	for(j = rc - 1; j >= 0; j--)
+	for(int j = matchcount - 1; j >= 0; j--)
 	{
-		pcre_get_substring(*text, ovector, rc, j, &(submatch));
-		int matchlength = ovector[j*2 + 1] - ovector[j*2];
-		remove_from_string(*text, ovector[j*2], matchlength);
+		int matchlength = matches->matches[j].end - matches->matches[j].start;
+		remove_from_string(*text, matches->matches[j].start, matchlength);
 		*text = realloc(*text, strlen(*text) + strlen(replacement));
-		//insert_into_string(*text, ovector[j*2], replacement);
-		memmove(*text + ovector[j*2] + strlen(replacement), *text + ovector[j*2], strlen(*text + ovector[j*2] + 1));
-		memcpy(*text + ovector[j*2], replacement, strlen(replacement));
-		pcre_free_substring(submatch);
+		insert_into_string(*text, matches->matches[j].start, replacement);
+		
+		/*memmove(*text + matches->matches[j].start + strlen(replacement), *text + matches->matches[j].start, strlen(*text + matches->matches[j].start));
+		memcpy(*text + matches->matches[j].start, replacement, strlen(replacement));*/
 	}
-	
-	pcre_free(re);
+	free(matches);
 	if(*text != NULL) *text = realloc(*text, strlen(*text) + 1);
 	return 0;
 }
+
+int get_pcre_matches_r(char *** strmatches, const char * text, const char * search, int flags)
+{
+	pregmatches *matches = NULL;
+	int matchcount = pcre_match_string_all(&matches, text, search, flags);
+	*strmatches = (char**)malloc((matchcount + 1) * sizeof(char*));
+	for(int i = 0; i < matchcount; i++)
+	{
+		char * singlematch = NULL;
+		substr_from_offsets(&singlematch, text, matches->matches[i].start, matches->matches[i].end);
+		(*strmatches)[i] = singlematch;
+	}
+	(*strmatches)[matchcount] = NULL;
+	free(matches);
+	return matchcount;
+}
+
 
 
