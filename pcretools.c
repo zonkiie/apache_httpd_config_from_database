@@ -140,5 +140,8 @@ int get_pcre_matches_r(char *** strmatches, const char * text, const char * sear
 	return matchcount;
 }
 
-
+int get_variable_names_r(char *** vars, const char * text)
+{
+	return get_pcre_matches_r(vars, text, "\\$\\w+\\b", -1);
+}
 

@@ -230,6 +230,32 @@ static const char *collect_section_string(cmd_parms *cmd, void *dummy, const cha
 	return NULL;
 }
 
+static const char * extract_variable_names()
+{
+	return NULL;
+}
+
+
+/*
+ ***************************************
+ *  <VHostTemplate Name $var1 $var2 ...>
+ *  <VirtualHost *:80>
+ *  ServerName $var2
+ *  ServerAlias www.$var2
+
+ *  DocumentRoot "/var/www/vhosts/$var1"
+ *  ErrorLog "/var/log/httpd/$var1.error_log"
+ *  CustomLog "/var/log/httpd/$var1.access_log" combined
+ *  </VirtualHost>
+ *  </VHostTemplate>
+ * 
+ */
+
+static const char * do_replacements()
+{
+	return NULL;
+}
+
 static const command_rec mod_cmds[] = {
     AP_INIT_RAW_ARGS(EXEC_SQL, exec_sql, NULL, EXEC_ON_READ | OR_ALL, "Use of a command."),
     AP_INIT_TAKE1(DB_DRIVER, set_driver, NULL, EXEC_ON_READ | OR_ALL, "Set DB Driver."),
