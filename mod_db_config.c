@@ -36,11 +36,13 @@ typedef struct
 } array_contents_t;
 
 
-static apr_hash_t *ap_commands = NULL;
+static apr_hash_t *vhost_templates = NULL;
 static char * db_dsn;
 static char * db_driver;
 static apr_dbd_driver_t * apr_driver;
 static apr_dbd_t *dbd = NULL;
+static apr_array_header_t *variables = NULL;
+static char * vhost_template = NULL;
 
 #define empty_string_p(p) (!(p) || *(p) == '\0')
 #define trim(line) while (*(line) == ' ' || *(line) == '\t') (line)++
