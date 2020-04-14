@@ -228,7 +228,23 @@ static const char *set_dsn(cmd_parms *cmd, void *mconfig, const char *arg)
 
 static const char *collect_section_string(cmd_parms *cmd, void *dummy, const char *arg)
 {
-	
+	char line[MAX_STRING_LEN];
+	apr_array_header_t *lines = apr_array_make(pool, 1, sizeof(char *));
+	apr_pool_t *pool = cmd->pool;
+	while (!ap_cfg_getline(line, MAX_STRING_LEN, config_file))
+	{
+		char *ptr = line;
+        char *first, **new;
+        /* skip comments */
+        if (*line == '#')
+            continue;
+		new = apr_array_push(lines);
+		*new = apr_psprintf(pool, "%s" APR_EOL_STR, line); /* put EOL back? */
+		if (!strcasecmp(line, END_TEMPLATE_SECTION))
+		{
+			break;
+		}
+	}
 	return NULL;
 }
 
