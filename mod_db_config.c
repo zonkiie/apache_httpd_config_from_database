@@ -234,18 +234,22 @@ static const char *collect_section_string(cmd_parms *cmd, void *dummy, const cha
 	while (!ap_cfg_getline(line, MAX_STRING_LEN, config_file))
 	{
 		char *ptr = line;
-        char *first, **new;
+        char *first, **new, *currline;
         /* skip comments */
         if (*line == '#')
             continue;
 		new = apr_array_push(lines);
 		*new = apr_psprintf(pool, "%s" APR_EOL_STR, line); /* put EOL back? */
-		if (!strcasecmp(line, END_TEMPLATE_SECTION))
+		if ((currline = strstr(line, END_TEMPLATE_SECTION)) == line)
 		{
 			break;
 		}
 	}
 	return NULL;
+}
+
+static const char * extract_template_name()
+{
 }
 
 static const char * extract_variable_names()
@@ -278,6 +282,7 @@ static const command_rec mod_cmds[] = {
     AP_INIT_RAW_ARGS(EXEC_SQL, exec_sql, NULL, EXEC_ON_READ | OR_ALL, "Use of a command."),
     AP_INIT_TAKE1(DB_DRIVER, set_driver, NULL, EXEC_ON_READ | OR_ALL, "Set DB Driver."),
     AP_INIT_TAKE1(DB_DSN, set_dsn, NULL, EXEC_ON_READ | OR_ALL, "Set DB DSN."),
+    AP_INIT_RAW_ARGS(BEGIN_TEMPLATE_SECTION, collect_section_string, NULL, EXEC_ON_READ | OR_ALL, "Beginning of a macro definition section."),
 	{NULL}
 };
 
