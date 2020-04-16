@@ -240,7 +240,9 @@ static const char *collect_section_string(cmd_parms *cmd, void *dummy, const cha
             continue;
 		new = apr_array_push(lines);
 		*new = apr_psprintf(pool, "%s" APR_EOL_STR, line); /* put EOL back? */
-		if ((currline = strstr(line, END_TEMPLATE_SECTION)) == line)
+		char * trimmed_line = apr_pstrdup(pool, line);
+		apr_collapse_spaces(trimmed_line, trimmed_line);
+		if ((currline = strstr(trimmed_line, END_TEMPLATE_SECTION)) == trimmed_line)
 		{
 			break;
 		}
