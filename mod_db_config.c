@@ -230,33 +230,65 @@ static const char *collect_section_string(cmd_parms *cmd, void *dummy, const cha
 {
 	char line[MAX_STRING_LEN];
 	apr_pool_t *pool = cmd->pool;
-	apr_array_header_t *lines = apr_array_make(pool, 1, sizeof(char *));
+	char *section_string = apr_pstrcat(pool, BEGIN_TEMPLATE_SECTION, " ", arg, NULL), ** arg_array, *name;
+	apr_tokenize_to_argv(arg, &arg_array, pool);
+	name = apr_pstrdup(pool, arg_array[0]);
 	FILE * ferr = fopen(LOGFILE, "w");
+	for(int i = 0; arg_array[i] != NULL; i++) fprintf(ferr, "Arg[%d]: %s\n", i, arg_array[i]);
 	fprintf(ferr, "Directive: %s\n", cmd->directive);
 	fprintf(ferr, "Dummy: %s\n", (char*)dummy);
 	fprintf(ferr, "Arg: %s\n", arg);
 	while (!ap_cfg_getline(line, MAX_STRING_LEN, cmd->config_file))
 	{
-		char *ptr = line;
-        char *first, **new, *currline;
-        /* skip comments */
-        if (*line == '#')
-            continue;
-		new = apr_array_push(lines);
-		*new = apr_psprintf(pool, "%s" APR_EOL_STR, line); /* put EOL back? */
+        char *currline;
 		fprintf(ferr, "Line: %s\n", line);
 		char * trimmed_line = apr_pstrdup(pool, line);
 		apr_collapse_spaces(trimmed_line, trimmed_line);
+        /* skip comments */
+        if (*trimmed_line == '#')
+            continue;
+		section_string = apr_pstrcat(pool, section_string, "\n", line, NULL); 
 		if ((currline = strstr(trimmed_line, END_TEMPLATE_SECTION)) == trimmed_line)
 		{
 			break;
 		}
 	}
+	fprintf(ferr, "Section String: %s\n", section_string);
 	fclose(ferr);
 	return NULL;
 }
 
-static const char * extract_template_name()
+// static const char *collect_section_string(cmd_parms *cmd, void *dummy, const char *arg)
+// {
+// 	char line[MAX_STRING_LEN];
+// 	apr_pool_t *pool = cmd->pool;
+// 	apr_array_header_t *lines = apr_array_make(pool, 1, sizeof(char *));
+// 	FILE * ferr = fopen(LOGFILE, "w");
+// 	fprintf(ferr, "Directive: %s\n", cmd->directive);
+// 	fprintf(ferr, "Dummy: %s\n", (char*)dummy);
+// 	fprintf(ferr, "Arg: %s\n", arg);
+// 	while (!ap_cfg_getline(line, MAX_STRING_LEN, cmd->config_file))
+// 	{
+// 		char *ptr = line;
+//         char *first, **new, *currline;
+//         /* skip comments */
+//         if (*line == '#')
+//             continue;
+// 		new = apr_array_push(lines);
+// 		*new = apr_psprintf(pool, "%s" APR_EOL_STR, line); /* put EOL back? */
+// 		fprintf(ferr, "Line: %s\n", line);
+// 		char * trimmed_line = apr_pstrdup(pool, line);
+// 		apr_collapse_spaces(trimmed_line, trimmed_line);
+// 		if ((currline = strstr(trimmed_line, END_TEMPLATE_SECTION)) == trimmed_line)
+// 		{
+// 			break;
+// 		}
+// 	}
+// 	fclose(ferr);
+// 	return NULL;
+// }
+
+static const char * extract_template_name(const char * arg)
 {
 }
 
