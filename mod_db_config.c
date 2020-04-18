@@ -231,7 +231,7 @@ static const char *collect_section_string(cmd_parms *cmd, void *dummy, const cha
 	char line[MAX_STRING_LEN];
 	apr_pool_t *pool = cmd->pool;
 	char *section_string = apr_pstrcat(pool, BEGIN_TEMPLATE_SECTION, " ", arg, NULL), ** arg_array, *name;
-	apr_tokenize_to_argv(arg, &arg_array, pool);
+	if(apr_tokenize_to_argv(arg, &arg_array, pool) != 0) return "Error in apr_tokenize_to_argv!";
 	name = apr_pstrdup(pool, arg_array[0]);
 	FILE * ferr = fopen(LOGFILE, "w");
 	for(int i = 0; arg_array[i] != NULL; i++) fprintf(ferr, "Arg[%d]: %s\n", i, arg_array[i]);
