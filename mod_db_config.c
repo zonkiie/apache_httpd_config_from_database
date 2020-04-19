@@ -37,6 +37,7 @@ typedef struct
 
 
 static apr_hash_t *vhost_templates = NULL;
+static apr_hash_t *vhost_template_args = NULL;
 static char * db_dsn;
 static char * db_driver;
 static apr_dbd_driver_t * apr_driver;
@@ -229,14 +230,15 @@ static const char *set_dsn(cmd_parms *cmd, void *mconfig, const char *arg)
 static const char *collect_section_string(cmd_parms *cmd, void *dummy, const char *arg)
 {
 	char line[MAX_STRING_LEN];
-	apr_pool_t *pool = cmd->pool;
-	char *section_string = apr_pstrcat(pool, BEGIN_TEMPLATE_SECTION, " ", arg, NULL), ** arg_array, *name;
-	if(apr_tokenize_to_argv(arg, &arg_array, pool) != 0) return "Error in apr_tokenize_to_argv!";
-	name = apr_pstrdup(pool, arg_array[0]);
 	FILE * ferr = fopen(LOGFILE, "w");
+	apr_pool_t *pool = cmd->pool;
+	char *section_string = apr_pstrdup(pool, "")/*apr_pstrcat(pool, BEGIN_TEMPLATE_SECTION, " ", arg, NULL)*/, ** arg_array;
+	if(apr_tokenize_to_argv(arg, &arg_array, pool) != 0) return "Error in apr_tokenize_to_argv!";
+	char *name = apr_pstrdup(pool, arg_array[0]);
+	if(vhost_templates == NULL) vhost_templates = apr_hash_make(pool);
+	if(vhost_template_args == NULL) vhost_template_args = apr_hash_make(pool);
+	apr_hash_set(vhost_template_args, name, APR_HASH_KEY_STRING, arg);
 	for(int i = 0; arg_array[i] != NULL; i++) fprintf(ferr, "Arg[%d]: %s\n", i, arg_array[i]);
-	fprintf(ferr, "Directive: %s\n", cmd->directive);
-	fprintf(ferr, "Dummy: %s\n", (char*)dummy);
 	fprintf(ferr, "Arg: %s\n", arg);
 	while (!ap_cfg_getline(line, MAX_STRING_LEN, cmd->config_file))
 	{
@@ -255,6 +257,7 @@ static const char *collect_section_string(cmd_parms *cmd, void *dummy, const cha
 	}
 	fprintf(ferr, "Section String: %s\n", section_string);
 	fclose(ferr);
+	apr_hash_set(vhost_templates, name, APR_HASH_KEY_STRING, section_string);
 	return NULL;
 }
 
@@ -313,8 +316,28 @@ static const char * extract_variable_names()
  * 
  */
 
-static const char * do_replacements()
+static const char * do_replacements(cmd_parms *cmd, void *dummy, int argc, char *const argv[])
 {
+	apr_pool_t *pool = cmd->pool;
+	FILE * ferr = fopen(LOGFILE, "a+");
+	char * macro_name = apr_pstrdup(pool, argv[0]);
+	char * content = NULL, * template_content = NULL, * template_args = NULL, **set_params = NULL;
+	_cleanup_cstr_ char *tmp_content = NULL;
+	if((content = apr_hash_get(vhost_templates, macro_name, APR_HASH_KEY_STRING)) != NULL) template_content = apr_pstrdup(pool, content);
+	if((content = apr_hash_get(vhost_template_args, macro_name, APR_HASH_KEY_STRING)) != NULL) vhost_template_args = apr_pstrdup(pool, content);
+	if(apr_tokenize_to_argv(vhost_template_args, &set_params, pool) != 0) return "Error when apr_tokenize_to_argv!";
+	tmp_content = strdup(template_content);
+	for(int i = 1; i < argc; i++)
+	{
+		fprintf(ferr, "Arg in %s: %s=>%s\n", __FUNCTION__, argv[i], set_params[i]);
+		_cleanup_cstr_ char * param = NULL;
+		sprintf(param, "\\%s\\b", set_params[i]);
+		pcre_replace_r(tmp_content, param, argv[i], -1);
+	}
+	fclose(ferr);
+	//fprintf(ferr, "Template to use: %s\n", template_content);
+	fprintf(ferr, "Useable Content: %s\n", tmp_content);
+	free(tmp_content);
 	return NULL;
 }
 
@@ -323,6 +346,7 @@ static const command_rec mod_cmds[] = {
     AP_INIT_TAKE1(DB_DRIVER, set_driver, NULL, EXEC_ON_READ | OR_ALL, "Set DB Driver."),
     AP_INIT_TAKE1(DB_DSN, set_dsn, NULL, EXEC_ON_READ | OR_ALL, "Set DB DSN."),
     AP_INIT_RAW_ARGS(BEGIN_TEMPLATE_SECTION, collect_section_string, NULL, EXEC_ON_READ | OR_ALL, "Beginning of a macro definition section."),
+    AP_INIT_TAKE_ARGV(USE_TEMPLATE, do_replacements, NULL, EXEC_ON_READ | OR_ALL, "Use the Template."),
 	{NULL}
 };
 
