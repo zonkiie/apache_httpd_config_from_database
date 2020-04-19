@@ -324,20 +324,19 @@ static const char * do_replacements(cmd_parms *cmd, void *dummy, int argc, char 
 	char * content = NULL, * template_content = NULL, * template_args = NULL, **set_params = NULL;
 	_cleanup_cstr_ char *tmp_content = NULL;
 	if((content = apr_hash_get(vhost_templates, macro_name, APR_HASH_KEY_STRING)) != NULL) template_content = apr_pstrdup(pool, content);
-	if((content = apr_hash_get(vhost_template_args, macro_name, APR_HASH_KEY_STRING)) != NULL) vhost_template_args = apr_pstrdup(pool, content);
-	if(apr_tokenize_to_argv(vhost_template_args, &set_params, pool) != 0) return "Error when apr_tokenize_to_argv!";
+	if((content = apr_hash_get(vhost_template_args, macro_name, APR_HASH_KEY_STRING)) != NULL) template_args = apr_pstrdup(pool, content);
+	if(apr_tokenize_to_argv(template_args, &set_params, pool) != 0) return "Error when apr_tokenize_to_argv!";
 	tmp_content = strdup(template_content);
 	for(int i = 1; i < argc; i++)
 	{
 		fprintf(ferr, "Arg in %s: %s=>%s\n", __FUNCTION__, argv[i], set_params[i]);
 		_cleanup_cstr_ char * param = NULL;
-		sprintf(param, "\\%s\\b", set_params[i]);
-		pcre_replace_r(tmp_content, param, argv[i], -1);
+		asprintf(&param, "\\%s\\b", set_params[i]);
+		pcre_replace_r(&tmp_content, param, argv[i], -1);
 	}
+	fprintf(ferr, "Useable Content: %s\n", tmp_content);
 	fclose(ferr);
 	//fprintf(ferr, "Template to use: %s\n", template_content);
-	fprintf(ferr, "Useable Content: %s\n", tmp_content);
-	free(tmp_content);
 	return NULL;
 }
 
