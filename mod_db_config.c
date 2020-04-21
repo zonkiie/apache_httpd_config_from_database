@@ -203,18 +203,18 @@ static const char *exec_sql(cmd_parms * cmd, void *dummy, const char *arg)
 			line = apr_pstrcat(cmd->temp_pool, line, " ", col, NULL);
 			//debug_printf("Col %d: %s, line: %s\n", i, col, line);
 		}
-		
+		// We trim the line to check wether it needs to be processed for variable replacement
 		char * trimmed_line = apr_pstrdup(cmd->temp_pool, line), *tb = trimmed_line, **set_params = NULL;
 		apr_collapse_spaces(trimmed_line, trimmed_line);
 		
 		if(strstr(trimmed_line, USE_TEMPLATE) == trimmed_line)
 		{
 			// Do replacement processing
-			trimmed_line += strlen(USE_TEMPLATE) + 1;
-			if(apr_tokenize_to_argv(trimmed_line, &set_params, cmd->temp_pool) != 0) return -1;
+			trimmed_line += strlen(USE_TEMPLATE);
+			char * vhost_content = NULL, * arg_string = strstr(line, USE_TEMPLATE) + strlen(USE_TEMPLATE);
+			if(apr_tokenize_to_argv(arg_string, &set_params, cmd->temp_pool) != 0) return -1;
 			int num_els = 0;
 			for(int i = 0; set_params[i] != NULL; i++) num_els++;
-			char * vhost_content;
 			build_vhost_entry_from_template_r(cmd, &vhost_content, num_els, set_params);
 			line = apr_pstrcat(cmd->temp_pool, vhost_content, "\n", NULL);
 		}
@@ -253,7 +253,6 @@ static const char *set_dsn(cmd_parms *cmd, void *mconfig, const char *arg)
 static const char *collect_section_string(cmd_parms *cmd, void *dummy, const char *arg)
 {
 	char line[MAX_STRING_LEN];
-	FILE * ferr = fopen(LOGFILE, "w");
 	apr_pool_t *pool = cmd->temp_pool;
 	char *section_string = apr_pstrdup(pool, "")/*apr_pstrcat(pool, BEGIN_TEMPLATE_SECTION, " ", arg, NULL)*/, ** arg_array;
 	if(apr_tokenize_to_argv(arg, &arg_array, pool) != 0) return "Error in apr_tokenize_to_argv!";
@@ -261,25 +260,20 @@ static const char *collect_section_string(cmd_parms *cmd, void *dummy, const cha
 	if(vhost_templates == NULL) vhost_templates = apr_hash_make(pool);
 	if(vhost_template_args == NULL) vhost_template_args = apr_hash_make(pool);
 	apr_hash_set(vhost_template_args, name, APR_HASH_KEY_STRING, arg);
-	for(int i = 0; arg_array[i] != NULL; i++) fprintf(ferr, "Arg[%d]: %s\n", i, arg_array[i]);
-	fprintf(ferr, "Arg: %s\n", arg);
 	while (!ap_cfg_getline(line, MAX_STRING_LEN, cmd->config_file))
 	{
         char *currline;
-		fprintf(ferr, "Line: %s\n", line);
 		char * trimmed_line = apr_pstrdup(pool, line);
 		apr_collapse_spaces(trimmed_line, trimmed_line);
         /* skip comments */
         if (*trimmed_line == '#')
             continue;
-		section_string = apr_pstrcat(pool, section_string, "\n", line, NULL); 
 		if ((currline = strstr(trimmed_line, END_TEMPLATE_SECTION)) == trimmed_line)
 		{
 			break;
 		}
+		section_string = apr_pstrcat(pool, section_string, "\n", line, NULL); 
 	}
-	fprintf(ferr, "Section String: %s\n", section_string);
-	fclose(ferr);
 	apr_hash_set(vhost_templates, name, APR_HASH_KEY_STRING, section_string);
 	return NULL;
 }
@@ -290,14 +284,14 @@ static const char *collect_section_string(cmd_parms *cmd, void *dummy, const cha
  */
 static int build_vhost_entry_from_template_r(cmd_parms *cmd, char ** text, int num_els, char *const els[])
 {
-	apr_pool_t *pool = cmd->temp_pool;
-	char * macro_name = apr_pstrdup(pool, els[0]), * content = NULL, * template_content = NULL, * template_args = NULL, **set_params = NULL;
+	char * macro_name = apr_pstrdup(cmd->temp_pool, els[0]), * content = NULL, * template_content = NULL, * template_args = NULL, **set_params = NULL;
 	// Get Vhost Template and args from global Hash Map
-	if((content = apr_hash_get(vhost_templates, macro_name, APR_HASH_KEY_STRING)) != NULL) template_content = apr_pstrdup(pool, content);
-	if((content = apr_hash_get(vhost_template_args, macro_name, APR_HASH_KEY_STRING)) != NULL) template_args = apr_pstrdup(pool, content);
+	if((content = apr_hash_get(vhost_templates, macro_name, APR_HASH_KEY_STRING)) != NULL) template_content = apr_pstrdup(cmd->temp_pool, content);
+	if((content = apr_hash_get(vhost_template_args, macro_name, APR_HASH_KEY_STRING)) != NULL) template_args = apr_pstrdup(cmd->temp_pool, content);
 	// Store Args into local array "set_params"
-	if(apr_tokenize_to_argv(template_args, &set_params, pool) != 0) return -1;
+	if(apr_tokenize_to_argv(template_args, &set_params, cmd->temp_pool) != 0) return -1;
 	_cleanup_cstr_ char * tmp_content = strdup(template_content);
+	fprintf(stderr, "template_content: %s\n--endcontent\n", template_content);
 	for(int i = 1; i < num_els; i++)
 	{
 		_cleanup_cstr_ char * param = NULL;
@@ -306,7 +300,8 @@ static int build_vhost_entry_from_template_r(cmd_parms *cmd, char ** text, int n
 		// Replace args with supplied parameters
 		pcre_replace_r(&tmp_content, param, els[i], -1);
 	}
-	*text = apr_pstrdup(pool, tmp_content);
+	fprintf(stderr, "Tmp_content: %s\n--endcontent\n", tmp_content);
+	*text = apr_pstrdup(cmd->temp_pool, tmp_content);
 	return 0;
 }
 
@@ -327,9 +322,12 @@ static int build_vhost_entry_from_template_r(cmd_parms *cmd, char ** text, int n
 
 static const char * do_replacements(cmd_parms *cmd, void *dummy, int argc, char *const argv[])
 {
-	char * contents = NULL;
+    apr_array_header_t *contents = apr_array_make(cmd->temp_pool, 1, sizeof(char *));
+	char **new = apr_array_push(contents);
+	char * string_contents = NULL;
 	char * where = apr_psprintf(cmd->temp_pool, "File '%s' (%d)", cmd->config_file->name, cmd->config_file->line_number);
-	build_vhost_entry_from_template_r(cmd, &contents, argc, argv);
+	build_vhost_entry_from_template_r(cmd, &string_contents, argc, argv);
+	*new = apr_pstrdup(cmd->temp_pool, string_contents);
 	cmd->config_file = make_array_config(cmd->temp_pool, contents, where, cmd->config_file, &cmd->config_file);
 	return NULL;
 }
