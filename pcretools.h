@@ -25,6 +25,7 @@ void cleanup_pcre_t(pcre **re);
 int pcre_match_string_all(pregmatches** matches, const char * text, const char * search, int flags);
 int pcre_replace_r(char ** text, const char * search, const char * replacement, int flags);
 int get_pcre_matches_r(char *** strmatches, const char * text, const char * search, int flags);
+char ** get_pcre_matches(const char * text, const char * search, int flags);
 int get_variable_names_r(char *** vars, const char * text);
 
 #endif

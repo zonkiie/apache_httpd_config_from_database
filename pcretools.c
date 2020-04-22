@@ -4,6 +4,8 @@ void remove_from_string(char * string, size_t start, size_t count)
 {
 	char * reststring = string + start + count;
 	size_t restlen = 0;
+	if(*reststring == NULL) return;
+	fprintf(stderr, "Reststring: %s\n", reststring);
 	restlen = strlen(reststring);
 	size_t full_length = strlen(string);
 	memmove((string + start), reststring, restlen);
@@ -145,3 +147,7 @@ int get_variable_names_r(char *** vars, const char * text)
 	return get_pcre_matches_r(vars, text, "\\$\\w+\\b", -1);
 }
 
+char ** get_pcre_matches(const char * text, const char * search, int flags)
+{
+	return NULL;
+}
