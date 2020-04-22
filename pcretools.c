@@ -5,7 +5,6 @@ void remove_from_string(char * string, size_t start, size_t count)
 	char * reststring = string + start + count;
 	size_t restlen = 0;
 	if(*reststring == NULL) return;
-	fprintf(stderr, "Reststring: %s\n", reststring);
 	restlen = strlen(reststring);
 	size_t full_length = strlen(string);
 	memmove((string + start), reststring, restlen);
@@ -20,6 +19,7 @@ void insert_into_string(char * string, size_t offset, char * to_insert)
 	size_t to_move = strlen(left);
 	memmove(right, left, to_move);
 	memcpy(left, to_insert, strlen(to_insert));
+	memset(string + strlen(string) + strlen(to_insert), 0, 1);
 }
 
 int substr_from_offsets(char ** dest, const char * text, size_t start, size_t end)
