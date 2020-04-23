@@ -38,7 +38,10 @@ or simply
 see create_db.sh
 
 ## Note
-You can't use mod_macro with mod_db_config or mod_cmd_config
+You can't use mod_macro with mod_db_config or mod_cmd_config. I've implemented an own simple template "engine" for mod_db_config.
+
+## Memory debugging of apache module
+    sudo valgrind --trace-children=yes apache2ctl restart
 
 # ap_configfs
 ## Example for configfile (/etc/ap_configfs.conf, ./ap_configfs.conf)

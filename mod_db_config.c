@@ -327,7 +327,6 @@ static const char * do_replacements(cmd_parms *cmd, void *dummy, int argc, char 
 	char * string_contents = NULL;
 	char * where = apr_psprintf(cmd->temp_pool, "File '%s' (%d)", cmd->config_file->name, cmd->config_file->line_number);
 	build_vhost_entry_from_template_r(cmd, &string_contents, argc, argv);
-// 	fprintf(stderr, "string_contents: %s\n", string_contents);
 	*new = apr_pstrdup(cmd->temp_pool, string_contents);
 	cmd->config_file = make_array_config(cmd->temp_pool, contents, where, cmd->config_file, &cmd->config_file);
 	return NULL;

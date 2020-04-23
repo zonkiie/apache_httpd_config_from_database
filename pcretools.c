@@ -3,23 +3,25 @@
 void remove_from_string(char * string, size_t start, size_t count)
 {
 	char * reststring = string + start + count;
-	size_t restlen = 0;
 	if(*reststring == NULL) return;
-	restlen = strlen(reststring);
 	size_t full_length = strlen(string);
+	//size_t restlen = strlen(reststring);
+	size_t restlen = full_length - start - count;
+	//fprintf(stderr, "start: %d, full_length: %d, restlen: %d, count: %d, reststring: %s\n", start, full_length, restlen, count, reststring);
 	memmove((string + start), reststring, restlen);
 	memset(string + full_length - count, 0, count);
 }
 
 void insert_into_string(char * string, size_t offset, char * to_insert)
 {
-	size_t new_pos_rest = offset + strlen(to_insert);
+	//size_t new_pos_rest = offset + strlen(to_insert);
+	size_t insert_length = strlen(to_insert), new_pos_rest = offset + insert_length, current_string_length = strlen(string);
 	char * left = (string + offset);
 	char * right = (string + new_pos_rest);
 	size_t to_move = strlen(left);
 	memmove(right, left, to_move);
-	memcpy(left, to_insert, strlen(to_insert));
-	memset(string + strlen(string) + strlen(to_insert), 0, 1);
+	memcpy(left, to_insert, insert_length);
+	memset(string + current_string_length + insert_length, 0, 1);
 }
 
 int substr_from_offsets(char ** dest, const char * text, size_t start, size_t end)
@@ -115,7 +117,8 @@ int pcre_replace_r(char ** text, const char * search, const char * replacement, 
 	{
 		int matchlength = matches->matches[j].end - matches->matches[j].start;
 		remove_from_string(*text, matches->matches[j].start, matchlength);
-		*text = realloc(*text, strlen(*text) + strlen(replacement));
+		//fprintf(stderr, "New Length: %ld\n", strlen(*text) + strlen(replacement) + 1);
+		*text = realloc(*text, strlen(*text) + strlen(replacement) + 1);
 		insert_into_string(*text, matches->matches[j].start, replacement);
 		
 		/*memmove(*text + matches->matches[j].start + strlen(replacement), *text + matches->matches[j].start, strlen(*text + matches->matches[j].start));
