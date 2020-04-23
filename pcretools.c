@@ -5,16 +5,13 @@ void remove_from_string(char * string, size_t start, size_t count)
 	char * reststring = string + start + count;
 	if(*reststring == NULL) return;
 	size_t full_length = strlen(string);
-	//size_t restlen = strlen(reststring);
 	size_t restlen = full_length - start - count;
-	//fprintf(stderr, "start: %d, full_length: %d, restlen: %d, count: %d, reststring: %s\n", start, full_length, restlen, count, reststring);
 	memmove((string + start), reststring, restlen);
 	memset(string + full_length - count, 0, count);
 }
 
 void insert_into_string(char * string, size_t offset, char * to_insert)
 {
-	//size_t new_pos_rest = offset + strlen(to_insert);
 	size_t insert_length = strlen(to_insert), new_pos_rest = offset + insert_length, current_string_length = strlen(string);
 	char * left = (string + offset);
 	char * right = (string + new_pos_rest);
@@ -117,7 +114,6 @@ int pcre_replace_r(char ** text, const char * search, const char * replacement, 
 	{
 		int matchlength = matches->matches[j].end - matches->matches[j].start;
 		remove_from_string(*text, matches->matches[j].start, matchlength);
-		//fprintf(stderr, "New Length: %ld\n", strlen(*text) + strlen(replacement) + 1);
 		*text = realloc(*text, strlen(*text) + strlen(replacement) + 1);
 		insert_into_string(*text, matches->matches[j].start, replacement);
 		
