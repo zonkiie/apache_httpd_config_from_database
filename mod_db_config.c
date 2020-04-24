@@ -341,7 +341,7 @@ static const command_rec mod_cmds[] = {
 	{NULL}
 };
 
-AP_DECLARE_MODULE(mod_db_config) = {
+AP_DECLARE_MODULE(db_config) = {
     STANDARD20_MODULE_STUFF,    /* common stuff */
         NULL,                   /* create per-directory config */
         NULL,                   /* merge per-directory config structures */
