@@ -33,6 +33,10 @@ or simply
 	DBDriver sqlite3
 	DBDSN "/dev/shm/mydb.sqlite"
 	ExecuteSQL "select '<VirtualHost *:80>'||x'0a'||'ServerName ' || vhost_name ||x'0a'||'DocumentRoot ' || target || x'0a'||'</VirtualHost>'||x'0a' as vhostdata from vhosts;"
+## Description
+Every Line which contains an ExecuteSQL Command is replaced with the Database Result of this query.
+Note that this module does only support one Database Connection.
+If you use a Database Server, please order the startup sequence so that the Database Server is started before the Apache Webserver.
 
 ## Example DB Create script
 see create_db.sh
