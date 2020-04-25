@@ -22,14 +22,14 @@ If using the apache module, you should know what you are doing!
 or simply
 	make apmod
 
-## Example apache config file /etc/apache2/mods-available/mod_cmd_config.conf - only to see if arg parsing works - will be changed later
+## Example apache config file /etc/apache2/mods-available/cmd_config.conf - only to see if arg parsing works - will be changed later
     <IfModule mod_cmd_config.c>
     <Command load_vhosts>
     Exec "/usr/sbin/ls"
     </Command>
     </IfModule>
 
-## Example apache config file /etc/apache2/mods-available/mod_db_config.conf
+## Example apache config file /etc/apache2/mods-available/db_config.conf
 	DBDriver sqlite3
 	DBDSN "/dev/shm/mydb.sqlite"
 	ExecuteSQL "select '<VirtualHost *:80>'||x'0a'||'ServerName ' || vhost_name ||x'0a'||'DocumentRoot ' || target || x'0a'||'</VirtualHost>'||x'0a' as vhostdata from vhosts;"
@@ -44,7 +44,7 @@ see create_db.sh
 ## Note
 You can't use mod_macro with mod_db_config or mod_cmd_config. I've implemented an own simple template "engine" for mod_db_config.
 
-## Memory debugging of apache module
+## Memory debugging of apache module I've used
     sudo valgrind --trace-children=yes apache2ctl restart
 
 # ap_configfs
