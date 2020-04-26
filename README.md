@@ -8,6 +8,12 @@ If using the apache module, you should know what you are doing!
  * unixodbc-dev
  * libfuse
  * libfuse-dev
+ * libapr1-dev
+ * libaprutil1
+ * libaprutil1-dbd-odbc
+ * libaprutil1-dbd-sqlite3
+ * libaprutil1-dev
+ * 
 
 ## How to compile
  * Create autotools Files with
