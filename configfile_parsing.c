@@ -4,7 +4,8 @@ void free_config_storage(config_storage* storage)
 {
 	for(int st_i = 0; storage[st_i].key != NULL && storage[st_i].storage != NULL; st_i++)
 	{
-		free_cstr(storage[st_i].storage);
+		free(storage[st_i].storage);
+		storage[st_i].storage = NULL;
 	}
 }
 

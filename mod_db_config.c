@@ -17,8 +17,8 @@
 #include "mod_dbd.h"
 
 #define EXEC_SQL "ExecuteSQL"
-#define DB_DRIVER "DBDriver"
-#define DB_DSN "DBDSN"
+#define DB_DRIVER "DBC_DBDriver"
+#define DB_DSN "DBC_DBDSN"
 #define BEGIN_TEMPLATE_SECTION "<VHostTemplate"
 #define END_TEMPLATE_SECTION "</VHostTemplate>"
 #define USE_TEMPLATE "UseTemplate"
@@ -38,9 +38,9 @@ typedef struct
 
 static apr_hash_t *vhost_templates = NULL;
 static apr_hash_t *vhost_template_args = NULL;
-static char * db_dsn;
-static char * db_driver;
-static apr_dbd_driver_t * apr_driver;
+static char * db_dsn = NULL;
+static char * db_driver = NULL;
+static const apr_dbd_driver_t * apr_driver;
 static apr_dbd_t *dbd = NULL;
 static apr_array_header_t *variables = NULL;
 static char * vhost_template = NULL;
@@ -173,20 +173,27 @@ static ap_configfile_t *make_array_config(apr_pool_t * pool,
 
 static const char *exec_sql(cmd_parms * cmd, void *dummy, const char *arg)
 {
-    char *sql, *where, *line = NULL;
+    char *sql, *line = NULL;
 	apr_dbd_results_t *res = NULL;
 	apr_dbd_row_t *row = NULL;
 	apr_status_t astat;
 	
-	if((astat = apr_dbd_open(apr_driver, cmd->temp_pool, db_dsn, &dbd)) != APR_SUCCESS) return apr_dbd_error(apr_driver, dbd, astat);
+	if((sql = ap_getword_conf(cmd->temp_pool, &arg)) == NULL) return "No command given.";
+	if(db_dsn == NULL || !strcmp(db_dsn, "")) return "Please define db_dsn first!";
+
+	//if((astat = apr_dbd_open(apr_driver, cmd->temp_pool, db_dsn, &dbd)) != APR_SUCCESS) return apr_dbd_error(apr_driver, dbd, astat);
+	const char * error;
+	if((astat = apr_dbd_open_ex(apr_driver, cmd->temp_pool, db_dsn, &dbd, &error)) != APR_SUCCESS)
+	{
+		fprintf(stderr, "Error: %s\n", error);
+		return apr_dbd_error(apr_driver, dbd, astat);
+	}
 	
     apr_array_header_t *replacements;
-    apr_array_header_t *contents;
-	if((sql = ap_getword_conf(cmd->temp_pool, &arg)) == NULL) return "No command given.";
 	
-	where = apr_psprintf(cmd->temp_pool, "File '%s' (%d)", cmd->config_file->name, cmd->config_file->line_number);
+	char *where = apr_psprintf(cmd->temp_pool, "File '%s' (%d)", cmd->config_file->name, cmd->config_file->line_number);
 	
-	contents = apr_array_make(cmd->temp_pool, 1, sizeof(char *));
+	apr_array_header_t *contents = apr_array_make(cmd->temp_pool, 1, sizeof(char *));
 	
 	int sqlstate = apr_dbd_select(apr_driver, cmd->temp_pool, dbd, &res, sql, 1);
 	if(sqlstate != 0) return apr_dbd_error(apr_driver, dbd, sqlstate);
@@ -212,7 +219,7 @@ static const char *exec_sql(cmd_parms * cmd, void *dummy, const char *arg)
 			// Do replacement processing
 			trimmed_line += strlen(USE_TEMPLATE);
 			char * vhost_content = NULL, * arg_string = strstr(line, USE_TEMPLATE) + strlen(USE_TEMPLATE);
-			if(apr_tokenize_to_argv(arg_string, &set_params, cmd->temp_pool) != 0) return -1;
+			if(apr_tokenize_to_argv(arg_string, &set_params, cmd->temp_pool) != 0) return "Error in apr_tokenize_to_argv!";
 			int num_els = 0;
 			for(int i = 0; set_params[i] != NULL; i++) num_els++;
 			build_vhost_entry_from_template_r(cmd, &vhost_content, num_els, set_params);
@@ -234,13 +241,24 @@ static const char *exec_sql(cmd_parms * cmd, void *dummy, const char *arg)
 	return NULL;
 }
 
-static const char *set_driver(cmd_parms *cmd, void *mconfig, const char *arg)
+static const char *set_db_driver_short(cmd_parms *cmd, void *mconfig, const char *arg)
 {
+	apr_dbd_init(cmd->temp_pool);
+	if(apr_dbd_get_driver(cmd->temp_pool, arg, &apr_driver) != APR_SUCCESS) return "Failed to get driver structure!";
+	return NULL;
+}
+
+static const char *set_db_driver(cmd_parms *cmd, void *mconfig, const char *arg)
+{
+	db_driver = apr_pstrdup(cmd->temp_pool, arg);
+	
 	// Evtl hier initialisieren
+	_autoclose_fstream_ FILE *ferr = fopen(LOGFILE, "a+");
+	fprintf(ferr, "Line: %d\n", __LINE__); fflush(ferr);
 	apr_status_t astat;
 	apr_dbd_init(cmd->temp_pool);
-	db_driver = apr_pstrdup(cmd->temp_pool, arg);
 	if((astat = apr_dbd_get_driver(cmd->temp_pool, db_driver, &apr_driver))	!= APR_SUCCESS) return "Failed to get driver structure!";
+	fprintf(ferr, "Apr DBD name: %s\n", apr_dbd_name(apr_driver));
 	return NULL;
 }
 
@@ -284,19 +302,22 @@ static const char *collect_section_string(cmd_parms *cmd, void *dummy, const cha
  */
 static int build_vhost_entry_from_template_r(cmd_parms *cmd, char ** text, int num_els, char *const els[])
 {
-	char * macro_name = apr_pstrdup(cmd->temp_pool, els[0]), * content = NULL, * template_content = NULL, * template_args = NULL, **set_params = NULL;
+	char * macro_name = apr_pstrdup(cmd->temp_pool, els[0]), * content = NULL, * template_content = NULL, * template_args = NULL;
 	// Get Vhost Template and args from global Hash Map
 	if((content = apr_hash_get(vhost_templates, macro_name, APR_HASH_KEY_STRING)) != NULL) template_content = apr_pstrdup(cmd->temp_pool, content);
 	if((content = apr_hash_get(vhost_template_args, macro_name, APR_HASH_KEY_STRING)) != NULL) template_args = apr_pstrdup(cmd->temp_pool, content);
 	// Store Args into local array "set_params"
+	/*_cleanup_carr_*/	char **set_params = NULL;
 	if(apr_tokenize_to_argv(template_args, &set_params, cmd->temp_pool) != 0) return -1;
+	int num_params = 0;
+	//for(int i = 0; set_params[i] != NULL; i++) num_params++;
 	_cleanup_cstr_ char * tmp_content = strdup(template_content);
 // 	fprintf(stderr, "template_content: %s\n--endcontent\n", template_content);
 	for(int i = 1; i < num_els; i++)
 	{
 		_cleanup_cstr_ char * param = NULL;
 		// Assume that Variable names begin with a to-quote char
-		asprintf(&param, "\\%s\\b", set_params[i]);
+		if(!asprintf(&param, "\\%s\\b", set_params[i])) return -1;
 		// Replace args with supplied parameters
 		pcre_replace_r(&tmp_content, param, els[i], -1);
 	}
@@ -334,7 +355,7 @@ static const char * do_replacements(cmd_parms *cmd, void *dummy, int argc, char 
 
 static const command_rec mod_cmds[] = {
     AP_INIT_RAW_ARGS(EXEC_SQL, exec_sql, NULL, EXEC_ON_READ | OR_ALL, "Use of a command."),
-    AP_INIT_TAKE1(DB_DRIVER, set_driver, NULL, EXEC_ON_READ | OR_ALL, "Set DB Driver."),
+    AP_INIT_TAKE1(DB_DRIVER, set_db_driver, NULL, EXEC_ON_READ | OR_ALL, "Set DB Driver."),
     AP_INIT_TAKE1(DB_DSN, set_dsn, NULL, EXEC_ON_READ | OR_ALL, "Set DB DSN."),
     AP_INIT_RAW_ARGS(BEGIN_TEMPLATE_SECTION, collect_section_string, NULL, EXEC_ON_READ | OR_ALL, "Beginning of a macro definition section."),
     AP_INIT_TAKE_ARGV(USE_TEMPLATE, do_replacements, NULL, EXEC_ON_READ | OR_ALL, "Use the Template."),

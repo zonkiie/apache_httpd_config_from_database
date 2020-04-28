@@ -55,11 +55,11 @@ int mmapwrite(const char *filename, const char * content)
       perror ("lseek");
       exit (EXIT_FAILURE);
 	}
-	write (fd_ziel, " ", 1);
+	if(!write (fd_ziel, " ", 1)) return -1;
 	char *ziel = NULL;
 	if ((ziel =
         mmap (0, getpagesize(), PROT_READ | PROT_WRITE,
-              MAP_SHARED, fd_ziel, 0)) == -1) {
+              MAP_SHARED, fd_ziel, 0)) == MAP_FAILED) {
       perror ("mmap");
       exit (EXIT_FAILURE);
 	}

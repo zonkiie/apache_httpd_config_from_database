@@ -28,7 +28,7 @@ If using the apache module, you should know what you are doing!
 or simply
 	make apmod
 
-## Example apache config file /etc/apache2/mods-available/cmd_config.conf - only to see if arg parsing works - will be changed later
+## mod_cmd_config: Example apache config file /etc/apache2/mods-available/cmd_config.conf - only to see if arg parsing works - will be changed later
     <IfModule mod_cmd_config.c>
     <Command load_vhosts>
     Exec "/usr/sbin/ls"
@@ -42,7 +42,7 @@ or simply
 ## Description
 Every Line which contains an ExecuteSQL Command is replaced with the Database Result of this query.
 Note that this module does only support one Database Connection.
-If you use a Database Server, please order the startup sequence so that the Database Server is started before the Apache Webserver.
+If you use a Database Server on the save host, please order the startup sequence so that the Database Server is started before the Apache Webserver.
 Variable names must start with a Dollar Sign ($) and end with a non-alphabetical char. Variable names may contain an underscore.
 
 ## Example DB Create script

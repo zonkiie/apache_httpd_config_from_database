@@ -1,7 +1,9 @@
 #ifndef __includes__
 #define __includes__
 
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>

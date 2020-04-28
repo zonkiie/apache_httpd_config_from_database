@@ -3,14 +3,14 @@
 void remove_from_string(char * string, size_t start, size_t count)
 {
 	char * reststring = string + start + count;
-	if(*reststring == NULL) return;
+	if(*reststring == 0) return;
 	size_t full_length = strlen(string);
 	size_t restlen = full_length - start - count;
 	memmove((string + start), reststring, restlen);
 	memset(string + full_length - count, 0, count);
 }
 
-void insert_into_string(char * string, size_t offset, char * to_insert)
+void insert_into_string(char * string, size_t offset, const char * to_insert)
 {
 	size_t insert_length = strlen(to_insert), new_pos_rest = offset + insert_length, current_string_length = strlen(string);
 	char * left = (string + offset);

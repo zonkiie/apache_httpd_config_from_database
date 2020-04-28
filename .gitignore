@@ -54,4 +54,5 @@ dkms.conf
 ap_configfs.conf
 
 not-my-modules/
+dist-config/
 
