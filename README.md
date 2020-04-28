@@ -44,6 +44,8 @@ Every Line which contains an ExecuteSQL Command is replaced with the Database Re
 Note that this module does only support one Database Connection.
 If you use a Database Server on the save host, please order the startup sequence so that the Database Server is started before the Apache Webserver.
 Variable names must start with a Dollar Sign ($) and end with a non-alphabetical char. Variable names may contain an underscore.
+### NOTE:
+Because of naming conflicts with mod_dbd, we use here other directives as mod_dbd.
 
 ## Example DB Create script
 see create_db.sh
