@@ -36,8 +36,8 @@ or simply
     </IfModule>
 
 ## Example apache config file /etc/apache2/mods-available/db_config.conf
-	DBDriver sqlite3
-	DBDSN "/dev/shm/mydb.sqlite"
+	DBC_DBDriver "sqlite3"
+	DBC_DBDSN "/dev/shm/mydb.sqlite"
 	ExecuteSQL "select '<VirtualHost *:80>'||x'0a'||'ServerName ' || vhost_name ||x'0a'||'DocumentRoot ' || target || x'0a'||'</VirtualHost>'||x'0a' as vhostdata from vhosts;"
 ## Description
 Every Line which contains an ExecuteSQL Command is replaced with the Database Result of this query.

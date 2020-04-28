@@ -251,14 +251,10 @@ static const char *set_db_driver_short(cmd_parms *cmd, void *mconfig, const char
 static const char *set_db_driver(cmd_parms *cmd, void *mconfig, const char *arg)
 {
 	db_driver = apr_pstrdup(cmd->temp_pool, arg);
-	
 	// Evtl hier initialisieren
-	_autoclose_fstream_ FILE *ferr = fopen(LOGFILE, "a+");
-	fprintf(ferr, "Line: %d\n", __LINE__); fflush(ferr);
 	apr_status_t astat;
 	apr_dbd_init(cmd->temp_pool);
 	if((astat = apr_dbd_get_driver(cmd->temp_pool, db_driver, &apr_driver))	!= APR_SUCCESS) return "Failed to get driver structure!";
-	fprintf(ferr, "Apr DBD name: %s\n", apr_dbd_name(apr_driver));
 	return NULL;
 }
 
