@@ -45,7 +45,8 @@ Note that this module does only support one Database Connection.
 If you use a Database Server on the save host, please order the startup sequence so that the Database Server is started before the Apache Webserver.
 Variable names must start with a Dollar Sign ($) and end with a non-alphabetical char. Variable names may contain an underscore.
 ### NOTE:
-Because of naming conflicts with mod_dbd, we use here other directives as mod_dbd.
+Because of naming conflicts with mod_dbd, we use here other directives than mod_dbd.
+When this module was called mod_db_config while developing, everything worked fine when using the directive DBDriver. After renaming to db_config, I've got segfaults and illegal reads when debugging the module. Then after some sleepless nights, I tried to rename the directive DBDriver to DBC_DBDriver and after another minor bug, everything worked fine again. So the lesson fpr module developer is: Use apache2ctl -L to find out wether your directives are already defined. When you don't see a directive with your designated name, you can choose the name.
 
 ## Example DB Create script
 see create_db.sh
