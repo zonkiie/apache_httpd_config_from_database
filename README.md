@@ -54,6 +54,10 @@ see create_db.sh
 ## Note
 You can't use mod_macro with mod_db_config or mod_cmd_config. I've implemented an own simple template "engine" for mod_db_config.
 
+## Hints for independent operation from database server
+One possibility is to use a file-based Database System like sqlite. Maybe there are alternatives to sqlite.
+You can use postgres with sqlite by using the fdw Wrapper for sqlite. So you can use sqlite from postgres and store your vhost-table in sqlite.
+
 ## Memory debugging of apache module I've used
     sudo valgrind --trace-children=yes apache2ctl restart
 
