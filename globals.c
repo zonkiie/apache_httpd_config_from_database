@@ -46,6 +46,19 @@ void reassign_cstr(char **str, const char * value)
 	*str = strdup(value);
 }
 
+/**
+ * size of an char ** array (number of elements until the first NULL element)
+ * @param the array to count
+ * @return number of elements in the array
+ */
+int get_carr_size(char ** carr)
+{
+	if(carr == NULL) return 0;
+    int i = 0;
+    for(; carr[i] != NULL; i++);
+    return i;
+}
+
 int mmapwrite(const char *filename, const char * content)
 {
 	mode_t mode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH;

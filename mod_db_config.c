@@ -228,8 +228,7 @@ static const char *exec_sql(cmd_parms * cmd, void *dummy, const char *arg)
 			char * vhost_content = NULL, * arg_string = strstr(line, USE_TEMPLATE) + strlen(USE_TEMPLATE);
 			// Tokenize Arguments
 			if(apr_tokenize_to_argv(arg_string, &set_args, cmd->temp_pool) != 0) return "Error in apr_tokenize_to_argv!";
-			int num_els = 0;
-			for(int i = 0; set_args[i] != NULL; i++) num_els++;
+			int num_els = get_carr_size(set_args);
 			// Replacements with Arguments
 			build_vhost_entry_from_template_r(cmd, &vhost_content, num_els, set_args);
 			line = apr_pstrcat(cmd->temp_pool, vhost_content, "\n", NULL);
@@ -340,8 +339,7 @@ static int build_vhost_entry_from_template_r(cmd_parms *cmd, char ** text, int n
 	char **set_params = NULL;
 	// Tokenize Macro Parameters into set_params
 	if(apr_tokenize_to_argv(template_args, &set_params, cmd->temp_pool) != 0) return -1;
-	int num_params = 0;
-	//for(int i = 0; set_params[i] != NULL; i++) num_params++;
+	int num_params = get_carr_size(set_params);
 	_cleanup_cstr_ char * tmp_content = strdup(template_content);
 // 	fprintf(stderr, "template_content: %s\n--endcontent\n", template_content);
 	for(int i = 1; i < num_els; i++)

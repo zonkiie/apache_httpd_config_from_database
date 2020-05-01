@@ -16,6 +16,7 @@ extern char *optarg;
 void free_cstr(char ** str);
 void free_carr(char ***carr);
 void free_fstream(FILE ** stream);
+int get_carr_size(char **);
 int mmapwrite(const char *filename, const char * content);
 void reassign_cstr(char **str, const char * value);
 
