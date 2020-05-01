@@ -36,9 +36,28 @@ or simply
     </IfModule>
 
 ## Example apache config file /etc/apache2/mods-available/db_config.conf
+### Without a Template
 	DBC_DBDriver "sqlite3"
 	DBC_DBDSN "/dev/shm/mydb.sqlite"
 	ExecuteSQL "select '<VirtualHost *:80>'||x'0a'||'ServerName ' || vhost_name ||x'0a'||'DocumentRoot ' || target || x'0a'||'</VirtualHost>'||x'0a' as vhostdata from vhosts;"
+### With a Template
+	DBC_DBDriver "sqlite3"
+	DBC_DBDSN "/dev/shm/mydb.sqlite"
+
+	<VHostTemplate Name $domain >
+	<VirtualHost *:80>
+	ServerName $domain
+	ServerAlias www.$domain
+	DocumentRoot "/var/www/$domain"
+	ErrorLog "/var/log/apache2/$domain/error.log"
+	CustomLog "/var/log/apache2/$domain/access_log" combined
+	</VirtualHost>
+	</VHostTemplate>
+
+	ExecuteSQL "select 'UseTemplate Name myexample2.com '||x'0a' as vhostdata;"
+
+The x'0a' is an expression in sqlite to add a line break. Look in the manual of your prefered database how to add a linebreak to the created string if you use other database systems.
+
 ## Description
 Every Line which contains an ExecuteSQL Command is replaced with the Database Result of this query.
 Note that this module does only support one Database Connection.

@@ -171,6 +171,13 @@ static ap_configfile_t *make_array_config(apr_pool_t * pool,
     return ap_pcfg_open_custom(pool, where, (void *) ls, array_getch, array_getstr, array_close);
 }
 
+/**
+ * Execute SQL Command and do replacements when ExecuteSQL appears. When UseTemplate appears in the result string, do replacements in the given template.
+ * @param cmd The Apache command environment
+ * @param dummy not used
+ * @param arg The SQL string
+ * @return char* NULL when no error occurs, an error string when an error occurs
+ */
 static const char *exec_sql(cmd_parms * cmd, void *dummy, const char *arg)
 {
     char *sql, *line = NULL;
@@ -250,22 +257,42 @@ static const char *set_db_driver_short(cmd_parms *cmd, void *mconfig, const char
 	return NULL;
 }
 
+/**
+ * Set the db_driver global variable when DBC_DBDriver directive appears in config file.
+ * @param cmd The Apache command environment
+ * @param mconfig not used
+ * @param arg The value in the directive
+ * @return char* NULL when no error occurs, an error string when an error occurs
+ */
 static const char *set_db_driver(cmd_parms *cmd, void *mconfig, const char *arg)
 {
 	db_driver = apr_pstrdup(cmd->temp_pool, arg);
-	// Evtl hier initialisieren
 	apr_status_t astat;
 	apr_dbd_init(cmd->temp_pool);
 	if((astat = apr_dbd_get_driver(cmd->temp_pool, db_driver, &apr_driver))	!= APR_SUCCESS) return "Failed to get driver structure!";
 	return NULL;
 }
 
+/**
+ * Set the db_dsn global variable when DBC_DBDSN directive appears in config file.
+ * @param cmd The Apache command environment
+ * @param mconfig not used
+ * @param arg The value in the directive
+ * @return char* NULL when no error occurs, an error string when an error occurs
+ */
 static const char *set_dsn(cmd_parms *cmd, void *mconfig, const char *arg)
 {
 	db_dsn = apr_pstrdup(cmd->temp_pool, arg);
 	return NULL;
 }
 
+/**
+ * Set the template content when the VHostTemplate directive appears in config file.
+ * @param cmd The Apache command environment
+ * @param mconfig not used
+ * @param arg The template parameters
+ * @return char* NULL when no error occurs, an error string when an error occurs
+ */
 static const char *collect_section_string(cmd_parms *cmd, void *dummy, const char *arg)
 {
 	char line[MAX_STRING_LEN];
@@ -297,7 +324,11 @@ static const char *collect_section_string(cmd_parms *cmd, void *dummy, const cha
 
 /**
  * Replace vars from els/num_els in template and store result in text 
- * 
+ * @param cmd The Apache command environment
+ * @param text The complete vhost entry with replaced arguments
+ * @param num_els The number of arguments
+ * @param els The arguments
+ * @return int 0 if everything is ok, otherwise -1
  */
 static int build_vhost_entry_from_template_r(cmd_parms *cmd, char ** text, int num_els, char *const els[])
 {
@@ -346,7 +377,14 @@ static int build_vhost_entry_from_template_r(cmd_parms *cmd, char ** text, int n
  *  </VHostTemplate>
  * 
  */
-
+/**
+ * Apply Template and do replacements when UseTemplate appears in Config file or in a passed string
+ * @param cmd The Apache command environment
+ * @param dummy not used
+ * @param argc The number of arguments
+ * @param argv The arguments
+ * @return NULL if everything is ok
+ */
 static const char * do_replacements(cmd_parms *cmd, void *dummy, int argc, char *const argv[])
 {
     apr_array_header_t *contents = apr_array_make(cmd->temp_pool, 1, sizeof(char *));
