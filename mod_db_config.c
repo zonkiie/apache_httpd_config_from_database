@@ -318,7 +318,7 @@ static int build_vhost_entry_from_template_r(cmd_parms *cmd, char ** text, int n
 		//Security check when one value is null
 		if(set_params[i] == NULL || els[i] == NULL)
 		{
-			printf(stderr, "Param[%d] or Arg[%d] is NULL!\n", i, i);
+			printf(stderr, "Param[%d](%s) or Arg[%d](%s) is NULL!\n", i, set_params[i], i, els[i]);
 			return -1;
 		}
 		_cleanup_cstr_ char * param = NULL;
