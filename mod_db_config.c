@@ -219,6 +219,7 @@ static const char *exec_sql(cmd_parms * cmd, void *dummy, const char *arg)
 			// Do replacement processing
 			trimmed_line += strlen(USE_TEMPLATE);
 			char * vhost_content = NULL, * arg_string = strstr(line, USE_TEMPLATE) + strlen(USE_TEMPLATE);
+			// Tokenize Arguments
 			if(apr_tokenize_to_argv(arg_string, &set_params, cmd->temp_pool) != 0) return "Error in apr_tokenize_to_argv!";
 			int num_els = 0;
 			for(int i = 0; set_params[i] != NULL; i++) num_els++;
@@ -269,6 +270,7 @@ static const char *collect_section_string(cmd_parms *cmd, void *dummy, const cha
 	char line[MAX_STRING_LEN];
 	apr_pool_t *pool = cmd->temp_pool;
 	char *section_string = apr_pstrdup(pool, "")/*apr_pstrcat(pool, BEGIN_TEMPLATE_SECTION, " ", arg, NULL)*/, ** arg_array;
+	// Tookenize Parameters
 	if(apr_tokenize_to_argv(arg, &arg_array, pool) != 0) return "Error in apr_tokenize_to_argv!";
 	char *name = apr_pstrdup(pool, arg_array[0]);
 	if(vhost_templates == NULL) vhost_templates = apr_hash_make(pool);
@@ -299,11 +301,12 @@ static const char *collect_section_string(cmd_parms *cmd, void *dummy, const cha
 static int build_vhost_entry_from_template_r(cmd_parms *cmd, char ** text, int num_els, char *const els[])
 {
 	char * macro_name = apr_pstrdup(cmd->temp_pool, els[0]), * content = NULL, * template_content = NULL, * template_args = NULL;
-	// Get Vhost Template and args from global Hash Map
+	// Get Vhost Template and Params from global Hash Map
 	if((content = apr_hash_get(vhost_templates, macro_name, APR_HASH_KEY_STRING)) != NULL) template_content = apr_pstrdup(cmd->temp_pool, content);
 	if((content = apr_hash_get(vhost_template_args, macro_name, APR_HASH_KEY_STRING)) != NULL) template_args = apr_pstrdup(cmd->temp_pool, content);
-	// Store Args into local array "set_params"
-	/*_cleanup_carr_*/	char **set_params = NULL;
+	// Store Params into local array "set_params"
+	char **set_params = NULL;
+	// Tokenize Macro Parameters into set_params
 	if(apr_tokenize_to_argv(template_args, &set_params, cmd->temp_pool) != 0) return -1;
 	int num_params = 0;
 	//for(int i = 0; set_params[i] != NULL; i++) num_params++;
