@@ -211,7 +211,7 @@ static const char *exec_sql(cmd_parms * cmd, void *dummy, const char *arg)
 			//debug_printf("Col %d: %s, line: %s\n", i, col, line);
 		}
 		// We trim the line to check wether it needs to be processed for variable replacement
-		char * trimmed_line = apr_pstrdup(cmd->temp_pool, line), *tb = trimmed_line, **set_params = NULL;
+		char * trimmed_line = apr_pstrdup(cmd->temp_pool, line), *tb = trimmed_line, **set_args = NULL;
 		apr_collapse_spaces(trimmed_line, trimmed_line);
 		
 		if(strstr(trimmed_line, USE_TEMPLATE) == trimmed_line)
@@ -220,10 +220,11 @@ static const char *exec_sql(cmd_parms * cmd, void *dummy, const char *arg)
 			trimmed_line += strlen(USE_TEMPLATE);
 			char * vhost_content = NULL, * arg_string = strstr(line, USE_TEMPLATE) + strlen(USE_TEMPLATE);
 			// Tokenize Arguments
-			if(apr_tokenize_to_argv(arg_string, &set_params, cmd->temp_pool) != 0) return "Error in apr_tokenize_to_argv!";
+			if(apr_tokenize_to_argv(arg_string, &set_args, cmd->temp_pool) != 0) return "Error in apr_tokenize_to_argv!";
 			int num_els = 0;
-			for(int i = 0; set_params[i] != NULL; i++) num_els++;
-			build_vhost_entry_from_template_r(cmd, &vhost_content, num_els, set_params);
+			for(int i = 0; set_args[i] != NULL; i++) num_els++;
+			// Replacements with Arguments
+			build_vhost_entry_from_template_r(cmd, &vhost_content, num_els, set_args);
 			line = apr_pstrcat(cmd->temp_pool, vhost_content, "\n", NULL);
 		}
 		else
@@ -314,6 +315,12 @@ static int build_vhost_entry_from_template_r(cmd_parms *cmd, char ** text, int n
 // 	fprintf(stderr, "template_content: %s\n--endcontent\n", template_content);
 	for(int i = 1; i < num_els; i++)
 	{
+		//Security check when one value is null
+		if(set_params[i] == NULL || els[i] == NULL)
+		{
+			printf(stderr, "Param[%d] or Arg[%d] is NULL!\n", i, i);
+			return -1;
+		}
 		_cleanup_cstr_ char * param = NULL;
 		// Assume that Variable names begin with a to-quote char
 		if(!asprintf(&param, "\\%s\\b", set_params[i])) return -1;
@@ -346,6 +353,7 @@ static const char * do_replacements(cmd_parms *cmd, void *dummy, int argc, char 
 	char **new = apr_array_push(contents);
 	char * string_contents = NULL;
 	char * where = apr_psprintf(cmd->temp_pool, "File '%s' (%d)", cmd->config_file->name, cmd->config_file->line_number);
+	// Replacements with arguments
 	build_vhost_entry_from_template_r(cmd, &string_contents, argc, argv);
 	*new = apr_pstrdup(cmd->temp_pool, string_contents);
 	cmd->config_file = make_array_config(cmd->temp_pool, contents, where, cmd->config_file, &cmd->config_file);
