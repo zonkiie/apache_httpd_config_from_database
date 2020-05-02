@@ -182,8 +182,6 @@ static const char *exec_sql(cmd_parms * cmd, void *dummy, const char *arg)
 		return apr_dbd_error(apr_driver, dbd, astat);
 	}
 	
-    apr_array_header_t *replacements;
-	
 	char *where = apr_psprintf(cmd->temp_pool, "File '%s' (%d)", cmd->config_file->name, cmd->config_file->line_number);
 	
 	apr_array_header_t *contents = apr_array_make(cmd->temp_pool, 1, sizeof(char *));
