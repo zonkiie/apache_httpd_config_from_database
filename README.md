@@ -73,6 +73,7 @@ see create_db.sh
 ## Note
 I've implemented an own simple template "engine" for mod_db_config. It can be used instead of mod_macro.
 It works even with mod_ssl!
+This Module is under development, so changes are possible!
 
 ## Hints for independent operation from database server
 One possibility is to use a file-based Database System like sqlite. Maybe there are alternatives to sqlite.
