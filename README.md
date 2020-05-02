@@ -44,7 +44,7 @@ or simply
 	DBC_DBDriver "sqlite3"
 	DBC_DBDSN "/dev/shm/mydb.sqlite"
 
-	<VHostTemplate Name $domain >
+	<VHostTemplate Vhost_NonSSL $domain >
 	<VirtualHost *:80>
 	ServerName $domain
 	ServerAlias www.$domain
@@ -54,7 +54,7 @@ or simply
 	</VirtualHost>
 	</VHostTemplate>
 
-	ExecuteSQL "select 'UseTemplate Name myexample2.com '||x'0a' as vhostdata;"
+	ExecuteSQL "select 'UseTemplate Vhost_NonSSL myexample2.com '||x'0a' as vhostdata;"
 
 The x'0a' is an expression in sqlite to add a line break. Look in the manual of your prefered database how to add a linebreak to the created string if you use other database systems.
 
@@ -71,7 +71,8 @@ When this module was called mod_db_config while developing, everything worked fi
 see create_db.sh
 
 ## Note
-You can't use mod_macro with mod_db_config or mod_cmd_config. I've implemented an own simple template "engine" for mod_db_config.
+I've implemented an own simple template "engine" for mod_db_config. It can be used instead of mod_macro.
+It works even with mod_ssl!
 
 ## Hints for independent operation from database server
 One possibility is to use a file-based Database System like sqlite. Maybe there are alternatives to sqlite.
